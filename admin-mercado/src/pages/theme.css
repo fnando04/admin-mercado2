@@ -1,0 +1,48 @@
+/* Variables globales del tema "Mercado Municipal" — importar una sola vez en App.jsx o index.css */
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { height: 100%; }
+
+:root {
+  --verde-900: #1E3A14;
+  --verde-800: #2C5020;
+  --verde-700: #3B6228;
+  --verde-600: #4A7A33;
+  --verde-400: #7DB05A;
+  --verde-300: #A0C980;
+  --verde-200: #C5E0A8;
+  --verde-100: #E2F0D0;
+  --verde-50:  #F0F7E8;
+  --arena:     #F8F6F1;
+  --blanco:    #FFFFFF;
+  --gris-100:  #F2F0EB;
+  --gris-200:  #E0DDD6;
+  --gris-400:  #A8A49E;
+  --gris-600:  #706C65;
+  --gris-900:  #1C1A18;
+  --rojo-bg:   #FDEEEE;
+  --rojo-text: #8A2020;
+  --rojo-borde:#F0B0B0;
+  --ambar-bg:  #FFF4D8;
+  --ambar-text:#9A6E00;
+  --azul-bg:   #E8F0FE;
+  --azul-text: #1A56B0;
+  --radio:     10px;
+  --radio-lg:  16px;
+  --radio-xl:  22px;
+  --sombra-sm: 0 1px 4px rgba(0,0,0,.06);
+
+  /* colores de puesto (usados en GestionPuestos) */
+  --puesto-disponible: #3B8C2A;
+  --puesto-ocupado:    #C0392B;
+  --puesto-moroso:     #C8A000;
+}
+
+body {
+  font-family: 'DM Sans', sans-serif;
+  color: var(--gris-900);
+}
+
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--gris-200); border-radius: 3px; }

@@ -15,11 +15,7 @@ const SIN_NAVBAR = ['/login', '/registro'];
 function Layout({ children }) {
   return (
     <>
-      <Routes>
-        <Route path="/login"    element={null} />
-        <Route path="/registro" element={null} />
-        <Route path="*"         element={<Navbar />} />
-      </Routes>
+ 
       {children}
     </>
   );
