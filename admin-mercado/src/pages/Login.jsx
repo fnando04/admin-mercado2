@@ -3,16 +3,49 @@ import { useNavigate, Link } from 'react-router-dom';
 import './Login.css';
 
 export default function Login() {
+  const [correo, setCorreo] = useState("");
+  const [password, setPassword] = useState("");
+
+
   const [mostrarPassword, setMostrarPassword] = useState(false);
   const [sesionActiva, setSesionActiva] = useState(true);
   const navigate = useNavigate();
 
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    // Aquí después conectas con tu backend
-    // Por ahora navega directo al dashboard
-    navigate('/dashboard');
-  };
+  const handleSubmit = async (e) => {
+  e.preventDefault();
+
+  try {
+    const respuesta = await fetch("http://localhost:3000/api/login", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        correo,
+        password
+      })
+    });
+
+    const datos = await respuesta.json();
+
+    if (!respuesta.ok) {
+      alert(datos.message);
+      return;
+    }
+
+    // Guardar información del usuario
+    localStorage.setItem("token", datos.token);
+    localStorage.setItem("usuario", JSON.stringify(datos.user));
+
+    alert("Bienvenido " + datos.user.nombre);
+
+    navigate("/dashboard");
+
+  } catch (error) {
+    console.error(error);
+    alert("No se pudo conectar con el servidor.");
+  }
+};
 
   return (
     <div className="login-page">
@@ -25,7 +58,14 @@ export default function Login() {
             <label htmlFor="email">Email</label>
             <div className="input-wrapper">
               <i className="fa-regular fa-envelope"></i>
-              <input type="email" id="email" placeholder="ejemplo@correo.com" required />
+              <input
+                type="email"
+                id="email"
+                placeholder="ejemplo@correo.com"
+                value={correo}
+                onChange={(e) => setCorreo(e.target.value)}
+                required
+              />
             </div>
           </div>
 
@@ -37,6 +77,8 @@ export default function Login() {
                 type={mostrarPassword ? 'text' : 'password'}
                 id="password"
                 placeholder="••••••••"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
                 required
               />
               <button
