@@ -5,8 +5,14 @@ exports.crearUsuario = async (req, res) => {
 
     try {
         await db.query(
-            "INSERT INTO usuarios (nombre, correo, password, rol, telefono) VALUES (?, ?, ?, ?, ?)",
-            [nombre, correo, password, rol, telefono]
+            "CALL sp_registrar_locatario(?,?,?,?,?)",
+            [
+                nombre,
+                correo,
+                password,
+                telefono,
+                giro_comercial
+            ]
         );
 
         res.json({ message: "Usuario creado" });
@@ -18,7 +24,9 @@ exports.crearUsuario = async (req, res) => {
 
 exports.listarUsuarios = async (req, res) => {
     try {
-        const [rows] = await db.query("SELECT * FROM usuarios");
+        const [rows] = await db.query(
+            "CALL sp_listar_locatarios()"
+        );
         res.json(rows);
     } catch (error) {
         res.status(500).json({ error: error.message });

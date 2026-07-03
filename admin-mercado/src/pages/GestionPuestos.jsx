@@ -1,17 +1,70 @@
-import { useState } from 'react';
+import { useEffect, useState } from "react";
 import './GestionPuestos.css';
 
-const puestosData = [
-  { num: 'A-01', nombre: null,             giro: null,         pago: null,           estado: 'disponible' },
-  { num: 'A-02', nombre: 'Isaí Robles',    giro: 'Comida',     pago: '10 Mayo 2026', estado: 'ocupado'    },
-  { num: 'B-04', nombre: 'Raúl Lora',      giro: 'Tecnología', pago: '03 Abr 2026',  estado: 'moroso'     },
-  { num: 'C-09', nombre: 'Pedro Bautista', giro: 'Celulares',  pago: '01 Mar 2026',  estado: 'ocupado'    },
-  { num: 'D-04', nombre: 'José Mendoza',   giro: 'Verdulería', pago: '14 Feb 2026',  estado: 'moroso'     },
-  { num: 'E-01', nombre: null,             giro: null,         pago: null,           estado: 'disponible' },
-];
-
 export default function GestionPuestos() {
-  const [sel, setSel] = useState(puestosData[1]);
+  const [puestosData, setPuestosData] = useState([]);
+  const [sel, setSel] = useState(null);
+
+  useEffect(() => {
+    obtenerPuestos();
+  }, []);
+
+  async function obtenerPuestos() {
+
+    try {
+
+      const respuesta = await fetch("http://localhost:3000/api/puestos");
+
+      const datos = await respuesta.json();
+
+      setPuestosData(datos);
+
+      if (datos.length > 0) {
+        setSel(datos[0]);
+      }
+
+    } catch (error) {
+
+      console.log(error);
+
+    }
+
+  }
+
+  async function liberarPuesto() {
+
+    if (!sel) return;
+
+    const confirmar = window.confirm(
+      "¿Deseas liberar este puesto?"
+    );
+
+    if (!confirmar) return;
+
+    try {
+
+      const respuesta = await fetch(
+        `http://localhost:3000/api/puestos/liberar/${sel.id_puesto}`,
+        {
+          method: "PUT"
+        }
+      );
+
+      const datos = await respuesta.json();
+
+      alert(datos.mensaje);
+
+      await obtenerPuestos();
+
+    } catch (error) {
+
+      console.log(error);
+
+      alert("No se pudo liberar el puesto.");
+
+    }
+
+  }
 
   return (
     <div className="content">
@@ -39,13 +92,17 @@ export default function GestionPuestos() {
           <div className="puestos-grid">
             {puestosData.map((p) => (
               <div
-                key={p.num}
-                className={`puesto-card ${p.estado}${sel?.num === p.num ? ' seleccionado' : ''}`}
+                key={p.numero_puesto}
+                className={`puesto-card ${p.estado}${sel?.numero_puesto === p.numero_puesto ? ' seleccionado' : ''}`}
                 onClick={() => setSel(p)}
               >
-                <span className="puesto-id">{p.num}</span>
+                <span className="puesto-id">{p.numero_puesto}</span>
                 <span className="puesto-nombre">{p.nombre ?? 'Disponible'}</span>
-                {p.giro && <span className="puesto-giro">{p.giro}</span>}
+                {p.giro_comercial && (
+                  <span className="puesto-giro">
+                    {p.giro_comercial}
+                  </span>
+                )}
               </div>
             ))}
           </div>
@@ -55,7 +112,7 @@ export default function GestionPuestos() {
         <div className="detalle-panel">
           <div className="detalle-header">
             <div className="detalle-header-label">Puesto</div>
-            <div className="detalle-header-id">{sel?.num ?? '—'}</div>
+            <div className="detalle-header-id">{sel?.numero_puesto ?? '—'}</div>
           </div>
 
           <div className="detalle-body">
@@ -75,7 +132,7 @@ export default function GestionPuestos() {
               </div>
               <div className="detalle-info">
                 <span className="detalle-key">Giro comercial</span>
-                <span className="detalle-val">{sel?.giro ?? '—'}</span>
+                <span className="detalle-val">{sel?.giro_comercial ?? '—'}</span>
               </div>
             </div>
 
@@ -85,7 +142,7 @@ export default function GestionPuestos() {
               </div>
               <div className="detalle-info">
                 <span className="detalle-key">Último pago</span>
-                <span className="detalle-val">{sel?.pago ?? '—'}</span>
+                <span className="detalle-val">{sel?.ultimo_pago ?? '—'}</span>
               </div>
             </div>
 
@@ -115,7 +172,10 @@ export default function GestionPuestos() {
               </span>
               <i className="fa-solid fa-chevron-right chevron" />
             </button>
-            <button className="btn-accion">
+            <button
+              className="btn-accion"
+              onClick={liberarPuesto}
+            >
               <span className="left">
                 <i className="fa-solid fa-lock-open" />
                 Liberar puesto

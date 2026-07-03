@@ -76,19 +76,19 @@
 .puesto-id {
   font-size: 13px;
   font-weight: 600;
-  color: rgba(255, 255, 255, 0.75);
+  color: rgba(26, 25, 25, 0.75);
   letter-spacing: 0.04em;
 }
 .puesto-nombre {
   font-size: 16px;
   font-weight: 700;
-  color: #fff;
+  color: #2c2a2a;
   letter-spacing: -0.01em;
   line-height: 1.2;
 }
 .puesto-giro {
   font-size: 13px;
-  color: rgba(255, 255, 255, 0.8);
+  color: rgba(46, 41, 41, 0.8);
   margin-top: auto;
   padding-top: 6px;
 }

@@ -34,9 +34,9 @@ app.use("/api/pagos", pagosRoutes);
 const usuariosRoutes = require("./routes/usuarios");
 app.use("/api/usuarios", usuariosRoutes);
 
-app.get("/", (req, res) => {
-    res.send("Backend funcionando ");
-});
+const puestosRoutes = require("./routes/puestos");
+app.use("/api/puestos", puestosRoutes);
+
 
 
 
