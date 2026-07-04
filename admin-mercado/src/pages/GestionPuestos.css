@@ -38,10 +38,10 @@
 }
 .lp-disponible       { background: #D6F0CC; color: #2A6210; }
 .lp-disponible .ldot { background: var(--puesto-disponible); }
-.lp-ocupado          { background: #FAD7D5; color: #7A1A1A; }
-.lp-ocupado .ldot    { background: var(--puesto-ocupado); }
-.lp-moroso           { background: var(--ambar-bg); color: var(--ambar-text); }
-.lp-moroso .ldot     { background: var(--puesto-moroso); }
+.lp-asignado         { background: #FAD7D5; color: #7A1A1A; }
+.lp-asignado .ldot    { background: var(--puesto-ocupado); }
+.lp-todos        { background: var(--ambar-bg); color: var(--ambar-text); }
+.lp-todos .ldot     { background: var(--puesto-moroso); }
 
 /* Grid de puestos */
 .puestos-grid {
@@ -70,7 +70,7 @@
   box-shadow: 0 0 0 5px rgba(0, 0, 0, 0.22);
 }
 .puesto-card.disponible { background: var(--puesto-disponible) !important; }
-.puesto-card.ocupado    { background: var(--puesto-ocupado) !important; }
+.puesto-card.asignado   { background: var(--puesto-ocupado) !important; }
 .puesto-card.moroso     { background: var(--puesto-moroso) !important; }
 
 .puesto-id {
@@ -186,8 +186,8 @@
 }
 .badge-disponible        { background: #D6F0CC; color: #2A6210; }
 .badge-disponible .bdot  { background: var(--puesto-disponible); }
-.badge-ocupado           { background: #FAD7D5; color: #7A1A1A; }
-.badge-ocupado .bdot     { background: var(--puesto-ocupado); }
+.badge-asignado           { background: #FAD7D5; color: #7A1A1A; }
+.badge-asignado .bdot     { background: var(--puesto-ocupado); }
 .badge-moroso            { background: var(--ambar-bg); color: var(--ambar-text); }
 .badge-moroso .bdot      { background: var(--puesto-moroso); }
 
@@ -231,4 +231,120 @@
 .btn-accion .chevron {
   color: var(--gris-400);
   font-size: 11px;
+}
+
+/* MODAL*/
+
+.modal-fondo{
+
+    position:fixed;
+
+    inset:0;
+
+    background:rgba(0,0,0,.45);
+
+    display:flex;
+
+    justify-content:center;
+
+    align-items:center;
+
+    z-index:999;
+
+}
+
+.modal-asignar{
+
+    width:520px;
+
+    background:white;
+
+    border-radius:18px;
+
+    padding:25px;
+
+    box-shadow:0 20px 60px rgba(0,0,0,.25);
+
+}
+
+.modal-asignar h2{
+
+    margin-bottom:20px;
+
+    color:#0d4f15;
+
+}
+
+.loc-item{
+
+    display:flex;
+
+    justify-content:space-between;
+
+    align-items:center;
+
+    padding:14px;
+
+    border:1px solid #e4e7ec;
+
+    border-radius:12px;
+
+    margin-bottom:12px;
+
+    transition:.25s;
+
+}
+
+.loc-item:hover{
+
+    background:#f6f9fc;
+
+}
+
+.loc-item button{
+
+    border:none;
+
+    background:#324f2b;
+
+    color:white;
+
+    padding:8px 16px;
+
+    border-radius:8px;
+
+    cursor:pointer;
+
+}
+
+.loc-item button:hover{
+
+    background:#274709;
+
+}
+
+.cerrar-modal{
+
+    margin-top:18px;
+
+    width:100%;
+
+    padding:12px;
+
+    border:none;
+
+    border-radius:10px;
+
+    background:#74826e;
+
+    color:white;
+
+    cursor:pointer;
+
+}
+
+.leyenda-pill.activo{
+    transform: scale(1.05);
+    box-shadow: 0 4px 12px rgba(0,0,0,.15);
+    border: 2px solid #1976d2;
 }

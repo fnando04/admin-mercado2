@@ -33,9 +33,9 @@ html, body { height: 100%; }
   --sombra-sm: 0 1px 4px rgba(0,0,0,.06);
 
   /* colores de puesto (usados en GestionPuestos) */
-  --puesto-disponible: #3B8C2A;
-  --puesto-ocupado:    #C0392B;
-  --puesto-moroso:     #C8A000;
+  --puesto-disponible: #b5e4ac;
+  --puesto-ocupado:    #f0cbc7;
+  --puesto-moroso:     #ddd09b;
 }
 
 body {

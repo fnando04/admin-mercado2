@@ -4,6 +4,15 @@ const controller = require("../controllers/puestosController");
 
 router.get("/", controller.listarPuestos);
 router.put("/liberar/:id", controller.liberarPuesto);
+router.get(
+    "/locatarios-disponibles",
+    controller.obtenerLocatariosDisponibles
+);
+
+router.put(
+    "/asignar",
+    controller.asignarPuesto
+);
 
 module.exports = router;
 

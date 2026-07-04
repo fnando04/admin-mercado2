@@ -4,6 +4,21 @@ import './GestionPuestos.css';
 export default function GestionPuestos() {
   const [puestosData, setPuestosData] = useState([]);
   const [sel, setSel] = useState(null);
+  const [mostrarModal, setMostrarModal] = useState(false);
+  const [locatarios, setLocatarios] = useState([]);
+  const [filtro, setFiltro] = useState("todos");
+
+  const puestosFiltrados = puestosData.filter((p) => {
+
+    if (filtro === "todos") return true;
+
+    if (filtro === "disponible") return p.estado === "disponible";
+
+    if (filtro === "asignado") return p.estado === "asignado";
+
+    return true;
+
+  });
 
   useEffect(() => {
     obtenerPuestos();
@@ -66,11 +81,74 @@ export default function GestionPuestos() {
 
   }
 
+  async function abrirModalAsignar() {
+
+    try {
+
+      const respuesta = await fetch(
+        "http://localhost:3000/api/puestos/locatarios-disponibles"
+      );
+
+      const datos = await respuesta.json();
+
+      setLocatarios(datos);
+
+      setMostrarModal(true);
+
+    } catch (error) {
+
+      console.log(error);
+
+    }
+
+  }
+
+  async function asignarPuesto(idLocatario) {
+
+    try {
+
+      const respuesta = await fetch(
+        "http://localhost:3000/api/puestos/asignar",
+        {
+
+          method: "PUT",
+
+          headers: {
+            "Content-Type": "application/json"
+          },
+
+          body: JSON.stringify({
+
+            id_locatario: idLocatario,
+
+            id_puesto: sel.id_puesto
+
+          })
+
+        }
+      );
+
+      const datos = await respuesta.json();
+
+      alert(datos.mensaje);
+
+      setMostrarModal(false);
+
+      obtenerPuestos();
+
+    } catch (error) {
+
+      console.log(error);
+
+    }
+
+  }
+
   return (
     <div className="content">
       <div className="page-head">
         <h1 className="page-titulo">Gestión de puestos</h1>
-        <p className="page-subtitulo">Mapa visual de ocupación · Mercado Municipal</p>
+        <p className="page-subtitulo">Mercado Municipal</p>
       </div>
 
       <div className="main-layout">
@@ -78,19 +156,29 @@ export default function GestionPuestos() {
         {/* ── Panel izquierdo: mapa ── */}
         <div className="mapa-panel">
           <div className="leyenda">
-            <span className="leyenda-pill lp-disponible">
+            <span
+              className={`leyenda-pill lp-todos ${filtro === "todos" ? "activo" : ""}`}
+              onClick={() => setFiltro("todos")}
+            >
+              <span className="ldot" />Todos
+            </span>
+            <span
+              className={`leyenda-pill lp-disponible ${filtro === "disponible" ? "activo" : ""}`}
+              onClick={() => setFiltro("disponible")}
+            >
               <span className="ldot" />Disponibles
             </span>
-            <span className="leyenda-pill lp-ocupado">
+            <span
+              className={`leyenda-pill lp-ocupado ${filtro === "asignado" ? "activo" : ""}`}
+              onClick={() => setFiltro("asignado")}
+            >
               <span className="ldot" />Ocupados
             </span>
-            <span className="leyenda-pill lp-moroso">
-              <span className="ldot" />Morosos
-            </span>
+
           </div>
 
           <div className="puestos-grid">
-            {puestosData.map((p) => (
+            {puestosFiltrados.map((p) => (
               <div
                 key={p.numero_puesto}
                 className={`puesto-card ${p.estado}${sel?.numero_puesto === p.numero_puesto ? ' seleccionado' : ''}`}
@@ -165,26 +253,117 @@ export default function GestionPuestos() {
           </div>
 
           <div className="detalle-acciones">
-            <button className="btn-accion">
-              <span className="left">
-                <i className="fa-solid fa-pen-to-square" />
-                Cambiar estado
-              </span>
-              <i className="fa-solid fa-chevron-right chevron" />
-            </button>
-            <button
-              className="btn-accion"
-              onClick={liberarPuesto}
-            >
-              <span className="left">
-                <i className="fa-solid fa-lock-open" />
-                Liberar puesto
-              </span>
-              <i className="fa-solid fa-chevron-right chevron" />
-            </button>
+
+            {sel?.estado === "disponible" ? (
+
+              <button
+                className="btn-accion"
+                onClick={abrirModalAsignar}
+              >
+
+                <span className="left">
+
+                  <i className="fa-solid fa-user-plus" />
+
+                  Asignar locatario
+
+                </span>
+
+              </button>
+
+            ) : (
+
+              <button
+                className="btn-accion"
+                onClick={liberarPuesto}
+              >
+
+                <span className="left">
+
+                  <i className="fa-solid fa-lock-open" />
+
+                  Liberar puesto
+
+                </span>
+
+              </button>
+
+            )}
+
           </div>
         </div>
       </div>
+      {
+        mostrarModal && (
+
+          <div className="modal-fondo">
+
+            <div className="modal-asignar">
+
+              <h2>Seleccionar locatario</h2>
+
+              {
+
+                locatarios.length === 0 ?
+
+                  (
+
+                    <p>No hay locatarios disponibles.</p>
+
+                  )
+
+                  :
+
+                  (
+
+                    locatarios.map((l) => (
+
+                      <div
+                        key={l.id_usuario}
+                        className="loc-item"
+                      >
+
+                        <div>
+
+                          <strong>{l.nombre}</strong>
+
+                          <br />
+
+                          {l.giro_comercial}
+
+                        </div>
+
+                        <button
+                          onClick={() => asignarPuesto(l.id_usuario)}
+                        >
+
+                          Asignar
+
+                        </button>
+
+                      </div>
+
+                    ))
+
+                  )
+
+              }
+
+              <button
+                className="cerrar-modal"
+                onClick={() => setMostrarModal(false)}
+              >
+
+                Cerrar
+
+              </button>
+
+            </div>
+
+          </div>
+
+        )
+      }
     </div>
   );
 }
