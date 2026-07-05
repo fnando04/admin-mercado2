@@ -367,11 +367,12 @@ BEGIN
             LIMIT 1
         ) AS estado_pago,
 
-		(
+        (
 			SELECT DATE_FORMAT(MAX(fecha_pago), '%d/%m/%Y')
 			FROM pagos pa
 			WHERE pa.id_puesto = p.id_puesto
 			  AND pa.estado_pago = 'pagado'
+			  AND p.estado = 'asignado'
 		) AS ultimo_pago
         
     FROM puestos p
