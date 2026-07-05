@@ -169,7 +169,7 @@ export default function GestionPuestos() {
               <span className="ldot" />Disponibles
             </span>
             <span
-              className={`leyenda-pill lp-ocupado ${filtro === "asignado" ? "activo" : ""}`}
+              className={`leyenda-pill lp-asignado ${filtro === "asignado" ? "activo" : ""}`}
               onClick={() => setFiltro("asignado")}
             >
               <span className="ldot" />Ocupados

@@ -8,7 +8,7 @@
 
 /* ── MAPA DE PUESTOS ───────────────────────────────── */
 .mapa-panel {
-  background: var(--verde-50);
+  background: #ffffff;
   border: 1px solid var(--verde-200);
   border-radius: var(--radio-xl);
   padding: 24px;
@@ -38,7 +38,7 @@
 }
 .lp-disponible       { background: #D6F0CC; color: #2A6210; }
 .lp-disponible .ldot { background: var(--puesto-disponible); }
-.lp-asignado         { background: #FAD7D5; color: #7A1A1A; }
+.lp-asignado         { background: #fcf1f1; color: #7A1A1A; }
 .lp-asignado .ldot    { background: var(--puesto-ocupado); }
 .lp-todos        { background: var(--ambar-bg); color: var(--ambar-text); }
 .lp-todos .ldot     { background: var(--puesto-moroso); }
