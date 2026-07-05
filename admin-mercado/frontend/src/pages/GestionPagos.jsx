@@ -1,38 +1,244 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import './GestionPagos.css';
 
-const pagosData = [
-  { num: 'A-12', nombre: 'Isaí Santos R.',    iniciales: 'IS', vence: '15 Nov 2023', estado: 'pagado' },
-  { num: 'B-04', nombre: 'Raúl Lora',         iniciales: 'RL', vence: '13 Nov 2024', estado: 'moroso' },
-  { num: 'C-09', nombre: 'Pedro Bautista',    iniciales: 'PB', vence: '21 Nov 2023', estado: 'pagado' },
-  { num: 'D-04', nombre: 'José Mendoza',      iniciales: 'JM', vence: '10 Nov 2023', estado: 'moroso' },
-  { num: 'E-07', nombre: 'Rodrigo Zuñiga',    iniciales: 'RZ', vence: '18 Nov 2023', estado: 'pagado' },
-  { num: 'F-02', nombre: 'Javier González',   iniciales: 'JG', vence: '30 Nov 2025', estado: 'pendiente' },
-  { num: 'G-05', nombre: 'Julián Vargas M.',  iniciales: 'JV', vence: '05 Nov 2026', estado: 'pendiente' },
+const NOMBRES_MES = [
+  "", "Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio",
+  "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"
 ];
+
+// Genera los últimos `cantidad` meses (incluyendo el actual) para los selects
+function generarOpcionesMeses(cantidad = 12) {
+  const opciones = [];
+  const hoy = new Date();
+  for (let i = 0; i < cantidad; i++) {
+    const f = new Date(hoy.getFullYear(), hoy.getMonth() - i, 1);
+    const mes = f.getMonth() + 1;
+    const anio = f.getFullYear();
+    opciones.push({ mes, anio, label: `${NOMBRES_MES[mes]} ${anio}`, todos: false });
+  }
+  return opciones;
+}
+
+const OPCION_TODOS = { todos: true, mes: null, anio: null, label: "Todos los meses" };
+const OPCIONES_MES = [OPCION_TODOS, ...generarOpcionesMeses(12)];
+const MESES_PARA_PAGAR = OPCIONES_MES.filter(o => !o.todos); // el modal de "registrar pago" nunca usa "todos"
 
 export default function GestionPagos() {
   const [filtros, setFiltros] = useState({ pagado: false, pendiente: false, moroso: false });
-  const [mes, setMes] = useState('Noviembre 2025');
+  const [pagosData, setPagosData] = useState([]);
+  const [detallePago, setDetallePago] = useState(null);
+
+  // Mes que se está viendo/generando en la tabla)
+  const [mesSeleccionado, setMesSeleccionado] = useState(OPCIONES_MES[0]);
+
+  // Modal de "Registrar pago"
+  const [modalPago, setModalPago] = useState(false);
+  const [filaSeleccionada, setFilaSeleccionada] = useState(null);
+  const [mesModalPago, setMesModalPago] = useState(MESES_PARA_PAGAR[0]);
+  const [fechaPago, setFechaPago] = useState(() => new Date().toISOString().slice(0, 10));
 
   const toggleFiltro = (key) => setFiltros(f => ({ ...f, [key]: !f[key] }));
 
   const algunFiltroActivo = filtros.pagado || filtros.pendiente || filtros.moroso;
   const pagosFiltrados = algunFiltroActivo
-    ? pagosData.filter(p => filtros[p.estado])
+    ? pagosData.filter(p => {
+      if (filtros.pagado && p.estado_pago === "pagado") return true;
+      if (filtros.pendiente && p.estado_pago === "pendiente") return true;
+      if (filtros.moroso && p.estado_pago === "vencido") return true;
+      return false;
+    })
     : pagosData;
 
+  const totalLocatarios = new Set(pagosData.map(p => p.id_puesto)).size;
   const conteo = {
-    pagado:    pagosData.filter(p => p.estado === 'pagado').length,
-    pendiente: pagosData.filter(p => p.estado === 'pendiente').length,
-    moroso:    pagosData.filter(p => p.estado === 'moroso').length,
+    pagado: pagosData.filter(p => p.estado_pago === 'pagado').length,
+    pendiente: pagosData.filter(p => p.estado_pago === 'pendiente').length,
+    moroso: pagosData.filter(p => p.estado_pago === 'vencido').length,
   };
+
+  // OJO: esto se ejecuta UNA sola vez al cargar la página, no cada vez que cambias de mes.
+  // Antes se ejecutaba en cada cambio de mes y eso iba marcando "pendientes" como "vencidos"
+  // constantemente (según la fecha_limite ya pasada), haciendo que desaparecieran de la vista.
+  useEffect(() => {
+    fetch("http://localhost:3000/api/pagos/actualizar-vencidos", { method: "POST" })
+      .catch(err => console.error(err));
+  }, []);
+
+  useEffect(() => {
+    cargarPagos(mesSeleccionado);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [mesSeleccionado]);
+
+  function cargarPagos(periodo = mesSeleccionado) {
+    const url = periodo.todos
+      ? "http://localhost:3000/api/pagos/puestos?todos=1"
+      : `http://localhost:3000/api/pagos/puestos?mes=${periodo.mes}&anio=${periodo.anio}`;
+
+    fetch(url)
+      .then(res => res.json())
+      .then(data => setPagosData(Array.isArray(data) ? data : []))
+      .catch(err => console.error(err));
+  }
+
+  // Genera los pagos pendientes del mes elegido por el administrador para todos los locatarios asignados
+  async function generarMes() {
+    if (mesSeleccionado.todos) {
+      alert("Selecciona un mes específico (no 'Todos los meses') para poder generarlo");
+      return;
+    }
+    try {
+      const res = await fetch("http://localhost:3000/api/pagos/generar-mes", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ mes: mesSeleccionado.mes, anio: mesSeleccionado.anio })
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        alert(data.error || "No se pudo generar el mes");
+        return;
+      }
+      alert(data.mensaje || `Pagos generados para ${mesSeleccionado.label}`);
+      cargarPagos(mesSeleccionado);
+    } catch (err) {
+      console.error(err);
+      alert("Error de conexión al generar el mes");
+    }
+  }
+
+  function verDetalle(p) {
+    setDetallePago(p);
+  }
+
+  // Abre el modal de "Registrar pago" precargado con la fila/locatario elegido
+  function abrirRegistrarPago(p) {
+    setFilaSeleccionada(p);
+    // Si estás en "Todos los meses", el mes por default es el que trae la fila; si no, el mes que estás viendo
+    const mesPorDefault = mesSeleccionado.todos
+      ? MESES_PARA_PAGAR.find(o => o.mes === p.mes_pagado && o.anio === p.anio_pagado) || MESES_PARA_PAGAR[0]
+      : mesSeleccionado;
+    setMesModalPago(mesPorDefault);
+    setFechaPago(new Date().toISOString().slice(0, 10));
+    setModalPago(true);
+  }
+
+  async function confirmarPago() {
+    if (!filaSeleccionada) return;
+
+    try {
+      const res = await fetch("http://localhost:3000/api/pagos", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          id_puesto: filaSeleccionada.id_puesto,
+          mes: mesModalPago.mes,
+          anio: mesModalPago.anio,
+          fecha_pago: fechaPago
+        })
+      });
+      const data = await res.json();
+
+      if (!res.ok) {
+        // Importante: si el backend falla, avisamos el error real y NO cerramos el modal
+        // ni recargamos la tabla, para que quede claro que no se guardó nada.
+        alert(data.error || "No se pudo registrar el pago");
+        return;
+      }
+
+      alert(data.mensaje || "Pago registrado");
+      setModalPago(false);
+      setFilaSeleccionada(null);
+      cargarPagos(mesSeleccionado);
+    } catch (err) {
+      console.error(err);
+      alert("Error de conexión al registrar el pago");
+    }
+  }
+
+  const generarIniciales = (nombre) =>
+    nombre ? nombre.split(" ").map(n => n[0]).join("") : "";
+
+  const etiquetaEstado = (estado) => {
+    if (!estado) return "Sin estado";
+    if (estado === "sin_generar") return "Sin generar";
+    return estado.charAt(0).toUpperCase() + estado.slice(1);
+  };
+
+  // Genera un comprobante en PDF sencillo usando el diálogo de impresión del navegador
+  // (sin dependencias extra): abre una ventana con una tabla ordenada y llama a print().
+  function generarComprobantePDF() {
+    const filas = pagosFiltrados;
+    const fechaGeneracion = new Date().toLocaleDateString("es-MX");
+
+    const filasHtml = filas.map(p => `
+      <tr>
+        <td>${p.id_puesto}</td>
+        <td>${p.nombre || "—"}</td>
+        <td>${p.giro_comercial || "—"}</td>
+        ${mesSeleccionado.todos ? `<td>${NOMBRES_MES[p.mes_pagado]} ${p.anio_pagado}</td>` : ""}
+        <td>${p.vence || "—"}</td>
+        <td>${etiquetaEstado(p.estado_pago)}</td>
+        <td>${p.ultimo_pago || "—"}</td>
+      </tr>
+    `).join("");
+
+    const html = `
+      <html>
+      <head>
+        <title>Comprobante de pagos - ${mesSeleccionado.label}</title>
+        <style>
+          body { font-family: Arial, sans-serif; padding: 24px; color: #222; }
+          h1 { font-size: 20px; margin-bottom: 4px; }
+          .subtitulo { color: #666; margin-top: 0; margin-bottom: 20px; font-size: 13px; }
+          table { width: 100%; border-collapse: collapse; font-size: 12px; }
+          th, td { border: 1px solid #ccc; padding: 6px 8px; text-align: left; }
+          th { background: #f2f2f2; }
+          .resumen { margin-top: 18px; font-size: 12px; }
+          .resumen span { margin-right: 20px; }
+        </style>
+      </head>
+      <body>
+        <h1>Comprobante de pagos - Mercado</h1>
+        <p class="subtitulo">Periodo: ${mesSeleccionado.label} · Generado: ${fechaGeneracion}</p>
+        <table>
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>Locatario</th>
+              <th>Giro comercial</th>
+              ${mesSeleccionado.todos ? "<th>Mes</th>" : ""}
+              <th>Vence</th>
+              <th>Estado</th>
+              <th>Último pago</th>
+            </tr>
+          </thead>
+          <tbody>${filasHtml}</tbody>
+        </table>
+        <div class="resumen">
+          <span><b>Total:</b> ${filas.length}</span>
+          <span><b>Pagados:</b> ${filas.filter(p => p.estado_pago === 'pagado').length}</span>
+          <span><b>Pendientes:</b> ${filas.filter(p => p.estado_pago === 'pendiente').length}</span>
+          <span><b>Vencidos:</b> ${filas.filter(p => p.estado_pago === 'vencido').length}</span>
+        </div>
+      </body>
+      </html>
+    `;
+
+    const ventana = window.open("", "_blank");
+    if (!ventana) {
+      alert("Habilita las ventanas emergentes en tu navegador para generar el PDF");
+      return;
+    }
+    ventana.document.write(html);
+    ventana.document.close();
+    ventana.focus();
+    ventana.print();
+  }
 
   return (
     <div className="content">
       <div className="page-head">
         <h1 className="page-titulo">Gestión de pagos</h1>
-        <p className="page-subtitulo">Control de renta mensual y morosidad · {mes}</p>
+        <p className="page-subtitulo">Control de renta mensual y morosidad · {mesSeleccionado.label}</p>
       </div>
 
       {/* Stats */}
@@ -42,7 +248,7 @@ export default function GestionPagos() {
             <span className="stat-label">Total locatarios</span>
             <div className="stat-icon azul"><i className="fa-solid fa-users"></i></div>
           </div>
-          <div className="stat-valor">{pagosData.length}</div>
+          <div className="stat-valor">{totalLocatarios}</div>
           <div className="stat-meta">Activos en el mercado</div>
         </div>
         <div className="stat-card">
@@ -51,7 +257,7 @@ export default function GestionPagos() {
             <div className="stat-icon verde"><i className="fa-solid fa-circle-check"></i></div>
           </div>
           <div className="stat-valor">{conteo.pagado}</div>
-          <div className="stat-meta"><b>{Math.round(conteo.pagado / pagosData.length * 100)}%</b> del total</div>
+          <div className="stat-meta"><b>{pagosData.length > 0 ? Math.round(conteo.pagado / pagosData.length * 100) : 0}%</b> del total</div>
         </div>
         <div className="stat-card">
           <div className="stat-card-top">
@@ -73,6 +279,9 @@ export default function GestionPagos() {
 
       {/* Acciones */}
       <div className="actions-row">
+          <button className="btn btnOutline" onClick={() => setFiltros({ pagado: false, pendiente: false, moroso: false })}>
+            <i className="fa-solid fa-list"></i> Todos los pagos
+          </button>
         <button className="btn btnOutline" onClick={() => setFiltros({ pagado: false, pendiente: true, moroso: false })}>
           <i className="fa-solid fa-clock"></i> Pagos pendientes
         </button>
@@ -80,8 +289,8 @@ export default function GestionPagos() {
           <i className="fa-solid fa-user-xmark"></i> Ver morosos
         </button>
         <div className="actions-spacer"></div>
-        <button className="btn btnOutline">
-          <i className="fa-solid fa-plus"></i> Registrar pago
+        <button className="btn btnOutline" onClick={generarMes}>
+          <i className="fa-solid fa-plus"></i> Generar pagos de {mesSeleccionado.label}
         </button>
       </div>
 
@@ -89,47 +298,38 @@ export default function GestionPagos() {
       <div className="filtros-bar">
         <div className="filtro-grupo">
           <span className="filtro-label">Mes</span>
-          <select className="sltMes" value={mes} onChange={e => setMes(e.target.value)}>
-            <option>Noviembre 2025</option>
-            <option>Octubre 2025</option>
-            <option>Septiembre 2025</option>
-            <option>Agosto 2025</option>
+          <select
+            className="sltMes"
+            value={mesSeleccionado.label}
+            onChange={e => {
+              const opt = OPCIONES_MES.find(o => o.label === e.target.value);
+              if (opt) {
+                setMesSeleccionado(opt);
+                setFiltros({ pagado: false, pendiente: false, moroso: false }); // limpiamos filtros al cambiar de mes
+              }
+            }}
+          >
+            {OPCIONES_MES.map(o => (
+              <option key={o.label} value={o.label}>{o.label}</option>
+            ))}
           </select>
         </div>
-        <div className="filtro-grupo">
-          <span className="filtro-label">Estado</span>
-          <div className="pills-group">
-            {[
-              { key: 'pagado',    color: '#48A020', label: 'Pagado' },
-              { key: 'pendiente', color: '#C8A000', label: 'Pendiente' },
-              { key: 'moroso',    color: '#C83030', label: 'Moroso' },
-            ].map(({ key, color, label }) => (
-              <button
-                key={key}
-                className={`pill-label ${filtros[key] ? `pill-${key}` : ''}`}
-                onClick={() => toggleFiltro(key)}
-              >
-                <span className="pill-dot" style={{ background: color }}></span>
-                {label}
-              </button>
-            ))}
-          </div>
-        </div>
         <div className="filtros-spacer"></div>
-        <div className="total-chip">Mostrando <b>{pagosFiltrados.length}</b> locatarios</div>
+        <div className="total-chip">Mostrando <b>{pagosFiltrados.length}</b> {mesSeleccionado.todos ? "registros" : "locatarios"}</div>
       </div>
 
       {/* Tabla */}
       <div className="tabla-wrap">
         <div className="tabla-header">
           <span className="tabla-titulo">Tabla de pagos</span>
-          <span className="tabla-mes-pill">{mes}</span>
+          <span className="tabla-mes-pill">{mesSeleccionado.label}</span>
         </div>
         <table>
           <thead>
             <tr>
               <th>#</th>
               <th>Locatario</th>
+              {mesSeleccionado.todos && <th>Mes</th>}
               <th>Fecha de vencimiento</th>
               <th>Estado</th>
               <th>Acciones</th>
@@ -137,38 +337,107 @@ export default function GestionPagos() {
           </thead>
           <tbody>
             {pagosFiltrados.map((p) => (
-              <tr key={p.num}>
-                <td className="td-num">{p.num}</td>
+              <tr key={mesSeleccionado.todos ? p.id_pago : p.id_puesto}>
+
+                <td className="td-num">{p.id_puesto}</td>
+
                 <td>
                   <div className="td-nombre-wrap">
-                    <div className="nombre-avatar">{p.iniciales}</div>
+                    <div className="nombre-avatar">{generarIniciales(p.nombre)}</div>
                     <span className="td-nombre">{p.nombre}</span>
                   </div>
                 </td>
-                <td className="td-fecha">{p.vence}</td>
+
+                {mesSeleccionado.todos && (
+                  <td>{NOMBRES_MES[p.mes_pagado]} {p.anio_pagado}</td>
+                )}
+
+                <td className="td-fecha">{p.vence || "—"}</td>
+
                 <td>
-                  <span className={`badge badge-${p.estado}`}>
+                  <span className={`badge badge-${p.estado_pago}`}>
                     <span className="bdot"></span>
-                    {p.estado.charAt(0).toUpperCase() + p.estado.slice(1)}
+                    {etiquetaEstado(p.estado_pago)}
                   </span>
                 </td>
+
                 <td>
                   <div className="td-acciones">
-                    <button className="btnDescargaPDF">
-                      <i className="fa-solid fa-file-pdf"></i> PDF
-                    </button>
-                    <button className="btnIconoFila" title="Ver detalle">
+                    {p.estado_pago !== "pagado" && (
+                      <button className="btnRegistrarPago" onClick={() => abrirRegistrarPago(p)}>
+                        <i className="fa-solid fa-money-bill"></i> Registrar pago
+                      </button>
+                    )}
+
+                    <button className="btnIconoFila" onClick={() => verDetalle(p)}>
                       <i className="fa-regular fa-eye"></i>
                     </button>
                   </div>
                 </td>
+
               </tr>
             ))}
           </tbody>
         </table>
+
+        {detallePago && (
+          <div className="modal-detalle">
+            <div className="modal-contenido">
+
+              <h2>Detalle de pago</h2>
+
+              <p><b>Locatario:</b> {detallePago.nombre}</p>
+              <p><b>Puesto:</b> {detallePago.numero_puesto}</p>
+              <p><b>Giro:</b> {detallePago.giro_comercial}</p>
+              <p><b>Estado:</b> {etiquetaEstado(detallePago.estado_pago)}</p>
+              <p><b>Último pago:</b> {detallePago.ultimo_pago || "Sin registro"}</p>
+
+              <button onClick={() => setDetallePago(null)}>
+                Cerrar
+              </button>
+
+            </div>
+          </div>
+        )}
+
+        {modalPago && filaSeleccionada && (
+          <div className="modal-detalle">
+            <div className="modal-contenido">
+
+              <h2>Registrar pago</h2>
+
+              <p><b>Locatario:</b> {filaSeleccionada.nombre}</p>
+              <p><b>Puesto:</b> {filaSeleccionada.numero_puesto}</p>
+
+              {/* MES A PAGAR: fijo, es el mes que ya trae la fila seleccionada */}
+              <p><b>Mes a pagar:</b> {mesModalPago.label}</p>
+
+              {/* FECHA DE PAGO */}
+              <label>Fecha de pago</label>
+              <input
+                type="date"
+                value={fechaPago}
+                onChange={(e) => setFechaPago(e.target.value)}
+              />
+
+              {/* BOTONES */}
+              <div style={{ marginTop: "10px" }}>
+                <button onClick={confirmarPago}>
+                  Confirmar pago
+                </button>
+
+                <button onClick={() => { setModalPago(false); setFilaSeleccionada(null); }}>
+                  Cancelar
+                </button>
+              </div>
+
+            </div>
+          </div>
+        )}
+
         <div className="tabla-footer">
-          <span className="footer-info">Total: <b>{pagosFiltrados.length} locatarios</b> · Mes: {mes}</span>
-          <button className="btnDescargaComprobanteTotalPDF">
+          <span className="footer-info">Total: <b>{pagosFiltrados.length}</b> · {mesSeleccionado.label}</span>
+          <button className="btnDescargaComprobanteTotalPDF" onClick={generarComprobantePDF}>
             <i className="fa-solid fa-file-arrow-down"></i> Descargar comprobante total PDF
           </button>
         </div>

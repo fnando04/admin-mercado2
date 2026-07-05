@@ -36,6 +36,7 @@ CREATE TABLE IF NOT EXISTS pagos (
     monto           DECIMAL(10,2) NOT NULL,
     fecha_pago      TIMESTAMP NULL DEFAULT NULL,
     estado_pago     ENUM('pendiente', 'pagado', 'vencido') DEFAULT 'pendiente',
+    fecha_limite DATE NULL,
     comprobante_url VARCHAR(255) NULL,
     UNIQUE KEY uq_pago_mes (id_locatario, mes_pagado, anio_pagado),
     FOREIGN KEY (id_locatario) REFERENCES locatarios(id_locatario) ON DELETE RESTRICT ON UPDATE CASCADE,
@@ -86,15 +87,15 @@ INSERT INTO locatarios (id_locatario, giro_comercial, id_puesto_asignado) VALUES
 (4, 'Ropa y Accesorios', 3),
 (5, 'Tortillería', NULL);
 
-INSERT INTO pagos (id_locatario, id_puesto, mes_pagado, anio_pagado, monto, fecha_pago, estado_pago) VALUES
-(2, 1, 4, 2025, 800.00, '2025-04-03 10:00:00', 'pagado'),
-(2, 1, 5, 2025, 800.00, '2025-05-02 09:30:00', 'pagado'),
-(2, 1, 6, 2025, 800.00, NULL, 'pendiente'),
-(3, 2, 4, 2025, 950.00, '2025-04-04 11:00:00', 'pagado'),
-(3, 2, 5, 2025, 950.00, NULL, 'vencido'),
-(3, 2, 6, 2025, 950.00, NULL, 'vencido'),
-(4, 3, 5, 2025, 700.00, '2025-05-01 08:00:00', 'pagado'),
-(4, 3, 6, 2025, 700.00, NULL, 'pendiente');
+INSERT INTO pagos (id_locatario, id_puesto, mes_pagado, anio_pagado, monto, fecha_pago, estado_pago, fecha_limite) VALUES
+(2, 1, 2, 2026, 800.00, '2026-02-03 10:00:00', 'pagado', '2026-03-06'),
+(2, 1, 3, 2026, 800.00, '2026-03-02 09:30:00', 'pagado', '2026-04-06'),
+(2, 1, 4, 2026, 800.00, NULL, 'pendiente', '2026-05-06'),
+(3, 2, 3, 2026, 950.00, '2026-03-04 11:00:00', 'pagado', '2026-04-06'),
+(3, 2, 2, 2026, 950.00, NULL, 'vencido', '2026-03-06'),
+(3, 2, 4, 2026, 950.00, NULL, 'vencido', '2026-05-06'),
+(4, 3, 3, 2026, 700.00, '2026-03-01 08:00:00', 'pagado', '2026-04-06'),
+(4, 3, 5, 2026, 700.00, NULL, 'pendiente', '2026-06-06');
 
 INSERT INTO incidencias (id_locatario, titulo, descripcion, estado, respuesta_admin, fecha_respuesta) VALUES
 (2, 'Fuga de agua', 'Hay una fuga en la tubería cerca de mi puesto A-01', 'Resuelta', 'Se envió al técnico y fue reparada el mismo día', '2025-05-10 14:00:00'),
@@ -214,17 +215,18 @@ END //
 DELIMITER ;
 
 DELIMITER //
+DELIMITER //
+
 CREATE PROCEDURE sp_marcar_pago(
-    IN p_id_pago        INT,
-    IN p_comprobante_url VARCHAR(255)
+    IN p_id_pago INT
 )
 BEGIN
     UPDATE pagos
     SET estado_pago = 'pagado',
-        fecha_pago = CURRENT_TIMESTAMP,
-        comprobante_url = p_comprobante_url
+        fecha_pago = NOW()
     WHERE id_pago = p_id_pago;
 END //
+
 DELIMITER ;
 
 DELIMITER //
@@ -358,7 +360,7 @@ DELIMITER ;
 DELIMITER //
 CREATE PROCEDURE sp_listar_puestos()
 BEGIN
-    SELECT p.id_puesto, p.numero_puesto, p.estado, u.nombre, l.giro_comercial,
+    SELECT p.id_puesto, p.numero_puesto, p.estado, u.nombre, l.giro_comercial, DATE_FORMAT(DATE_ADD(CURDATE(), INTERVAL 7 DAY), '%d/%m/%Y') AS vence,
         ( SELECT estado_pago
 			FROM pagos pa
             WHERE pa.id_puesto = p.id_puesto
@@ -418,5 +420,126 @@ BEGIN
       AND u.activo = 1
 
     ORDER BY u.nombre;
+END //
+DELIMITER ;
+
+DELIMITER //
+CREATE PROCEDURE sp_generar_pagos_mes(
+    IN p_mes  INT,
+    IN p_anio INT
+)
+BEGIN
+    INSERT IGNORE INTO pagos (id_locatario, id_puesto, mes_pagado, anio_pagado, monto, estado_pago, fecha_limite)
+    SELECT
+        l.id_locatario,
+        l.id_puesto_asignado,
+        p_mes,
+        p_anio,
+        800.00,
+        'pendiente',
+        DATE_ADD(LAST_DAY(CONCAT(p_anio, '-', p_mes, '-01')), INTERVAL 5 DAY)
+    FROM locatarios l
+    WHERE l.id_puesto_asignado IS NOT NULL;
+END //
+DELIMITER ;
+
+DELIMITER //
+
+CREATE PROCEDURE sp_actualizar_vencidos()
+BEGIN
+    UPDATE pagos
+    SET estado_pago = 'vencido'
+    WHERE estado_pago = 'pendiente'
+      AND CURDATE() > fecha_limite;
+END //
+
+DELIMITER ;
+
+
+DELIMITER //
+CREATE PROCEDURE sp_listar_pagos_todos()
+BEGIN
+    SELECT
+        p.id_puesto,
+        p.numero_puesto,
+        u.nombre,
+        l.giro_comercial,
+        pa.id_pago,
+        pa.mes_pagado,
+        pa.anio_pagado,
+        DATE_FORMAT(pa.fecha_limite, '%d/%m/%Y') AS vence,
+        pa.estado_pago,
+        DATE_FORMAT(pa.fecha_pago, '%d/%m/%Y') AS ultimo_pago
+    FROM pagos pa
+    INNER JOIN puestos p ON pa.id_puesto = p.id_puesto
+    LEFT JOIN locatarios l ON p.id_puesto = l.id_puesto_asignado
+    LEFT JOIN usuarios  u ON l.id_locatario = u.id_usuario
+    ORDER BY pa.anio_pagado DESC, pa.mes_pagado DESC, p.numero_puesto;
+END //
+DELIMITER ;
+
+DELIMITER //
+CREATE PROCEDURE sp_listar_puestos_mes(
+    IN p_mes  INT,
+    IN p_anio INT
+)
+BEGIN
+    SELECT
+        p.id_puesto,
+        p.numero_puesto,
+        p.estado,
+        u.nombre,
+        l.giro_comercial,
+        pa.id_pago,
+        DATE_FORMAT(pa.fecha_limite, '%d/%m/%Y') AS vence,
+        pa.estado_pago,
+        DATE_FORMAT(pa.fecha_pago, '%d/%m/%Y') AS ultimo_pago
+    FROM pagos pa
+    INNER JOIN puestos p ON pa.id_puesto = p.id_puesto
+    LEFT JOIN locatarios l ON p.id_puesto = l.id_puesto_asignado
+    LEFT JOIN usuarios  u  ON l.id_locatario = u.id_usuario
+    WHERE pa.mes_pagado = p_mes
+      AND pa.anio_pagado = p_anio
+      AND p.estado = 'asignado'
+    ORDER BY p.numero_puesto;
+END //
+DELIMITER ;
+
+DELIMITER //
+CREATE PROCEDURE sp_registrar_pago_puesto(
+    IN p_id_puesto  INT,
+    IN p_mes        INT,
+    IN p_anio       INT,
+    IN p_fecha_pago DATETIME
+)
+BEGIN
+    DECLARE v_id_locatario INT;
+    DECLARE v_id_pago      INT;
+ 
+    SELECT id_locatario INTO v_id_locatario
+    FROM locatarios
+    WHERE id_puesto_asignado = p_id_puesto
+    LIMIT 1;
+ 
+    IF v_id_locatario IS NULL THEN
+        SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'El puesto no tiene locatario asignado';
+    END IF;
+ 
+    SELECT id_pago INTO v_id_pago
+    FROM pagos
+    WHERE id_puesto = p_id_puesto
+      AND mes_pagado = p_mes
+      AND anio_pagado = p_anio
+    LIMIT 1;
+ 
+    IF v_id_pago IS NULL THEN
+        INSERT INTO pagos (id_locatario, id_puesto, mes_pagado, anio_pagado, monto, fecha_pago, estado_pago)
+        VALUES (v_id_locatario, p_id_puesto, p_mes, p_anio, 800.00, IFNULL(p_fecha_pago, NOW()), 'pagado');
+    ELSE
+        UPDATE pagos
+        SET estado_pago = 'pagado',
+            fecha_pago  = IFNULL(p_fecha_pago, NOW())
+        WHERE id_pago = v_id_pago;
+    END IF;
 END //
 DELIMITER ;
