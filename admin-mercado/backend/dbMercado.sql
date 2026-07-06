@@ -636,3 +636,55 @@ BEGIN
     UPDATE avisos SET archivado = 1 WHERE id_aviso = p_id_aviso;
 END //
 DELIMITER ;
+
+-- ADMINISTRADORES
+DELIMITER //
+CREATE PROCEDURE sp_listar_administradores()
+BEGIN
+    SELECT
+        id_usuario,
+        nombre,
+        correo,
+        telefono,
+        activo,
+        DATE_FORMAT(fecha_creacion, '%d/%m/%Y') AS fecha_creacion
+    FROM usuarios
+    WHERE rol = 'administrador'
+    ORDER BY nombre;
+END //
+DELIMITER ;
+
+DELIMITER //
+CREATE PROCEDURE sp_registrar_administrador(
+    IN p_nombre   VARCHAR(100),
+    IN p_correo   VARCHAR(100),
+    IN p_password VARCHAR(50),
+    IN p_telefono VARCHAR(20)
+)
+BEGIN
+    INSERT INTO usuarios (nombre, correo, password, rol, telefono)
+    VALUES (p_nombre, p_correo, p_password, 'administrador', p_telefono);
+END //
+DELIMITER ;
+
+DELIMITER //
+CREATE PROCEDURE sp_cambiar_estado_administrador(
+    IN p_id_usuario   INT,
+    IN p_nuevo_estado TINYINT
+)
+BEGIN
+    DECLARE v_activos INT;
+ 
+    IF p_nuevo_estado = 0 THEN
+        SELECT COUNT(*) INTO v_activos
+        FROM usuarios
+        WHERE rol = 'administrador' AND activo = 1;
+ 
+        IF v_activos <= 1 THEN
+            SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'No puedes desactivar al único administrador activo';
+        END IF;
+    END IF;
+ 
+    UPDATE usuarios SET activo = p_nuevo_estado WHERE id_usuario = p_id_usuario;
+END //
+DELIMITER ;
