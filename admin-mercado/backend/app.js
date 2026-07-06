@@ -55,6 +55,9 @@ app.use("/api/locatario", locatarioRoutes);
 
 const dashboardRoutes = require('./routes/dashboardRoutes');
 app.use('/api/dashboard', dashboardRoutes);
+
+const locatariosRoutes = require('./routes/locatariosRoutes');
+app.use('/api/locatarios', locatariosRoutes);
 //--------------------
 const PORT = 3000;
 
@@ -64,5 +67,3 @@ const PORT = 3000;
 app.listen(PORT, () => {
     console.log(`Servidor iniciado en puerto ${PORT}`);
 });
-
-
