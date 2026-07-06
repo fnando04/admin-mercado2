@@ -44,6 +44,9 @@ app.use("/api/incidencias", incidenciasRoutes);
 const avisosRoutes = require("./routes/avisos");
 app.use("/api/avisos", avisosRoutes);
 
+const administradoresRoutes = require("./routes/admin");
+app.use("/api/administradores", administradoresRoutes);
+
 //--------------------
 const PORT = 3000;
 

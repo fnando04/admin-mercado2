@@ -21,6 +21,7 @@ export default function Navbar() {
     { to: '/puestos',     icon: 'fa-shop',               label: 'Puestos' },
     { to: '/pagos',       icon: 'fa-credit-card',        label: 'Pagos' },
     { to: '/incidencias', icon: 'fa-triangle-exclamation', label: 'Incidencias' },
+    { to: '/administradores', icon: 'fa-user-shield', label: 'Administradores' },
   ];
 
   // Datos del admin logueado (los guarda Login.jsx en localStorage bajo la key "usuario")

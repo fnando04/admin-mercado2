@@ -7,6 +7,7 @@ import GestionPuestos       from './pages/GestionPuestos';
 import Incidencias          from './pages/Incidencias';
 import Login                from './pages/Login';
 import RegistrarUsuario     from './pages/RegistrarUsuario';
+import GestionAdmin from './pages/GestionAdmin';
 import './styles/global.css';
 
 // Páginas que NO muestran el navbar (login, registro)
@@ -49,6 +50,7 @@ function AppRoutes() {
         <Route path="/pagos"         element={<GestionPagos />} />
         <Route path="/puestos"       element={<GestionPuestos />} />
         <Route path="/incidencias"   element={<Incidencias />} />
+        <Route path="/administradores" element={<GestionAdmin />} />
       </Routes>
     </>
   );
