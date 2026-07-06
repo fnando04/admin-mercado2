@@ -52,9 +52,17 @@ app.use("/api/administradores", administradoresRoutes);
 
 const locatarioRoutes = require("./routes/locatario");
 app.use("/api/locatario", locatarioRoutes);
+
+const dashboardRoutes = require('./routes/dashboardRoutes');
+app.use('/api/dashboard', dashboardRoutes);
 //--------------------
 const PORT = 3000;
+
+
+
 
 app.listen(PORT, () => {
     console.log(`Servidor iniciado en puerto ${PORT}`);
 });
+
+

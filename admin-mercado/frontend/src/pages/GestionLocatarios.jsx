@@ -1,18 +1,6 @@
-import { useMemo, useState } from 'react';
+import { useMemo, useState, useEffect } from 'react';
 import PageLayout from './PageLayout';
 import './GestionLocatarios.css';
-
-const LOCATARIOS = [
-  { num: 'A-12', iniciales: 'IS', nombre: 'Isaí Santos R.', giro: 'Comida', estado: 'Activo', correo: 'santosrob@gmail.com' },
-  { num: 'B-04', iniciales: 'RL', nombre: 'Raúl Lora', giro: 'Tecnología', estado: 'Moroso', correo: 'raulira04@gmail.com' },
-  { num: 'C-09', iniciales: 'PB', nombre: 'Pedro Bautista', giro: 'Celulares', estado: 'Suspendido', correo: 'pedroty@gmail.com' },
-  { num: 'D-04', iniciales: 'JM', nombre: 'José Mendoza', giro: 'Verdulería', estado: 'Moroso', correo: 'josse39men@gmail.com' },
-  { num: 'E-07', iniciales: 'RZ', nombre: 'Rodrigo Zuñiga', giro: 'Abarrotes', estado: 'Activo', correo: 'rodzu1@gmail.com' },
-  { num: 'F-02', iniciales: 'JG', nombre: 'Javier Gonzales', giro: 'Tortillería', estado: 'Suspendido', correo: 'javig560@gmail.com' },
-  { num: 'G-05', iniciales: 'JV', nombre: 'Julián Vargas M.', giro: 'Carnicería', estado: 'Activo', correo: 'vargasjul04@gmail.com' },
-];
-
-const GIROS = ['Comida', 'Tecnología', 'Celulares', 'Verdulería', 'Abarrotes', 'Tortillería', 'Carnicería'];
 
 const BADGE_CLASE = {
   Activo: 'badge-activo',
@@ -21,27 +9,130 @@ const BADGE_CLASE = {
 };
 
 export default function GestionLocatarios() {
+  const [locatarios, setLocatarios] = useState([]);
   const [busqueda, setBusqueda] = useState('');
   const [giro, setGiro] = useState('');
   const [estado, setEstado] = useState('');
 
+  const [detalle, setDetalle] = useState(null);
+
+  const [modalNuevo, setModalNuevo] = useState(false);
+  const [nuevoLocatario, setNuevoLocatario] = useState({
+    nombre: '', correo: '', password: '', telefono: '', giro_comercial: ''
+  });
+
+  const [editando, setEditando] = useState(null); // objeto locatario en edición
+  const [formEdicion, setFormEdicion] = useState({ telefono: '', correo: '', giro_comercial: '' });
+
+  useEffect(() => {
+    cargarLocatarios();
+  }, []);
+
+  function cargarLocatarios() {
+    fetch("http://localhost:3000/api/locatarios")
+      .then(res => res.json())
+      .then(data => setLocatarios(Array.isArray(data) ? data : []))
+      .catch(err => console.error(err));
+  }
+
+  const giros = useMemo(() => {
+    return [...new Set(locatarios.map(l => l.giro_comercial).filter(Boolean))];
+  }, [locatarios]);
+
   const filtrados = useMemo(() => {
-    return LOCATARIOS.filter((l) => {
+    return locatarios.filter((l) => {
       const coincideBusqueda = l.nombre.toLowerCase().includes(busqueda.toLowerCase());
-      const coincideGiro = !giro || l.giro === giro;
+      const coincideGiro = !giro || l.giro_comercial === giro;
       const coincideEstado = !estado || l.estado === estado;
       return coincideBusqueda && coincideGiro && coincideEstado;
     });
-  }, [busqueda, giro, estado]);
+  }, [locatarios, busqueda, giro, estado]);
 
   const totales = useMemo(() => ({
-    total: LOCATARIOS.length,
-    activos: LOCATARIOS.filter((l) => l.estado === 'Activo').length,
-    morosos: LOCATARIOS.filter((l) => l.estado === 'Moroso').length,
-    suspendidos: LOCATARIOS.filter((l) => l.estado === 'Suspendido').length,
-  }), []);
+    total: locatarios.length,
+    activos: locatarios.filter((l) => l.estado === 'Activo').length,
+    morosos: locatarios.filter((l) => l.estado === 'Moroso').length,
+    suspendidos: locatarios.filter((l) => l.estado === 'Suspendido').length,
+  }), [locatarios]);
 
-  const pctActivos = Math.round((totales.activos / totales.total) * 100);
+  const pctActivos = totales.total ? Math.round((totales.activos / totales.total) * 100) : 0;
+
+  function alternarFiltroEstado(valor) {
+    setEstado(prev => (prev === valor ? '' : valor));
+  }
+
+  async function crearLocatario() {
+    const { nombre, correo, password, telefono, giro_comercial } = nuevoLocatario;
+    if (!nombre.trim() || !correo.trim() || !password.trim() || !giro_comercial.trim()) {
+      alert("Completa nombre, correo, contraseña y giro comercial");
+      return;
+    }
+    try {
+      const res = await fetch("http://localhost:3000/api/locatarios", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ nombre, correo, password, telefono, giro_comercial })
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        alert(data.error || "No se pudo registrar el locatario");
+        return;
+      }
+      alert(data.mensaje || "Locatario registrado");
+      setModalNuevo(false);
+      setNuevoLocatario({ nombre: '', correo: '', password: '', telefono: '', giro_comercial: '' });
+      cargarLocatarios();
+    } catch (err) {
+      console.error(err);
+      alert("Error de conexión al registrar el locatario");
+    }
+  }
+
+  function iniciarEdicion(l) {
+    setEditando(l);
+    setFormEdicion({ telefono: l.telefono || '', correo: l.correo || '', giro_comercial: l.giro_comercial || '' });
+  }
+
+  async function guardarEdicion() {
+    const { telefono, correo, giro_comercial } = formEdicion;
+    if (!correo.trim() || !giro_comercial.trim()) {
+      alert("Completa correo y giro comercial");
+      return;
+    }
+    try {
+      const res = await fetch(`http://localhost:3000/api/locatarios/${editando.id_usuario}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ telefono, correo, giro_comercial })
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        alert(data.error || "No se pudo actualizar el locatario");
+        return;
+      }
+      setEditando(null);
+      cargarLocatarios();
+    } catch (err) {
+      console.error(err);
+      alert("Error de conexión al actualizar el locatario");
+    }
+  }
+
+  async function suspender(l) {
+    if (!window.confirm(`¿Suspender a ${l.nombre}? Perderá acceso y se liberará su puesto.`)) return;
+    try {
+      const res = await fetch(`http://localhost:3000/api/locatarios/${l.id_usuario}/suspender`, { method: "PATCH" });
+      const data = await res.json();
+      if (!res.ok) {
+        alert(data.error || "No se pudo suspender al locatario");
+        return;
+      }
+      cargarLocatarios();
+    } catch (err) {
+      console.error(err);
+      alert("Error de conexión al suspender al locatario");
+    }
+  }
 
   return (
     <PageLayout>
@@ -89,14 +180,20 @@ export default function GestionLocatarios() {
 
       {/* Acciones superiores */}
       <div className="actions-row">
-        <button className="btn btnOutline">
+        <button
+          className="btn btnOutline"
+          onClick={() => alternarFiltroEstado('Moroso')}
+        >
           <i className="fa-solid fa-user-xmark"></i> Ver morosos
         </button>
-        <button className="btn btnDanger">
+        <button
+          className="btn btnDanger"
+          onClick={() => alternarFiltroEstado('Suspendido')}
+        >
           <i className="fa-solid fa-ban"></i> Ver suspendidos
         </button>
         <div className="actions-spacer"></div>
-        <button className="btnRegistrar">
+        <button className="btnRegistrar" onClick={() => setModalNuevo(true)}>
           <i className="fa-solid fa-plus"></i> Registrar locatario
         </button>
       </div>
@@ -108,7 +205,7 @@ export default function GestionLocatarios() {
           <input
             className="filtro-input"
             type="text"
-            placeholder="Buscar nombre o CURP…"
+            placeholder="Buscar nombre…"
             value={busqueda}
             onChange={(e) => setBusqueda(e.target.value)}
           />
@@ -117,7 +214,7 @@ export default function GestionLocatarios() {
           <span className="filtro-label">Giro</span>
           <select className="filtro-select" value={giro} onChange={(e) => setGiro(e.target.value)}>
             <option value="">Giro de comercio</option>
-            {GIROS.map((g) => <option key={g} value={g}>{g}</option>)}
+            {giros.map((g) => <option key={g} value={g}>{g}</option>)}
           </select>
         </div>
         <div className="filtro-grupo">
@@ -128,10 +225,6 @@ export default function GestionLocatarios() {
             <option>Moroso</option>
             <option>Suspendido</option>
           </select>
-        </div>
-        <div className="filtro-grupo" style={{ justifyContent: 'flex-end' }}>
-          <span className="filtro-label">&nbsp;</span>
-          <button className="btn-buscar"><i className="fa-solid fa-magnifying-glass"></i> Buscar</button>
         </div>
         <div className="filtros-spacer"></div>
         <div className="total-chip">Mostrando <b>{filtrados.length}</b> locatarios</div>
@@ -156,26 +249,37 @@ export default function GestionLocatarios() {
           </thead>
           <tbody>
             {filtrados.map((l) => (
-              <tr key={l.num}>
-                <td className="td-num">{l.num}</td>
+              <tr key={l.id_usuario}>
+                <td className="td-num">{l.numero_puesto || '—'}</td>
                 <td>
                   <div className="td-nombre-wrap">
                     <div className="nombre-avatar">{l.iniciales}</div>
                     <span className="td-nombre">{l.nombre}</span>
                   </div>
                 </td>
-                <td className="td-giro">{l.giro}</td>
+                <td className="td-giro">{l.giro_comercial}</td>
                 <td>
-                  <span className={`badge ${BADGE_CLASE[l.estado]}`}>
+                  <span className={`badge ${BADGE_CLASE[l.estado] || 'badge-activo'}`}>
                     <span className="bdot"></span>{l.estado}
                   </span>
                 </td>
                 <td className="td-correo">{l.correo}</td>
                 <td>
                   <div className="td-acciones">
-                    <button className="btnIconoFila" title="Ver detalle"><i className="fa-regular fa-eye"></i></button>
-                    <button className="btnIconoFila" title="Editar"><i className="fa-regular fa-pen-to-square"></i></button>
-                    <button className="btnIconoFila danger" title="Suspender"><i className="fa-solid fa-ban"></i></button>
+                    <button className="btnIconoFila" title="Ver detalle" onClick={() => setDetalle(l)}>
+                      <i className="fa-regular fa-eye"></i>
+                    </button>
+                    <button className="btnIconoFila" title="Editar" onClick={() => iniciarEdicion(l)}>
+                      <i className="fa-regular fa-pen-to-square"></i>
+                    </button>
+                    <button
+                      className="btnIconoFila danger"
+                      title="Suspender"
+                      disabled={l.estado === 'Suspendido'}
+                      onClick={() => suspender(l)}
+                    >
+                      <i className="fa-solid fa-ban"></i>
+                    </button>
                   </div>
                 </td>
               </tr>
@@ -193,11 +297,116 @@ export default function GestionLocatarios() {
           <span className="footer-info">
             Total: <b>{totales.total} locatarios</b> · Activos: <b>{totales.activos}</b> · Morosos: <b>{totales.morosos}</b> · Suspendidos: <b>{totales.suspendidos}</b>
           </span>
-          <button className="btnRegistrar">
+          <button className="btnRegistrar" onClick={() => setModalNuevo(true)}>
             <i className="fa-solid fa-plus"></i> Registrar locatario
           </button>
         </div>
       </div>
+
+      {/* MODAL: VER DETALLE */}
+      {detalle && (
+        <div className="modal-detalle">
+          <div className="modal-contenido">
+            <h2>{detalle.nombre}</h2>
+            <p><b>Puesto:</b> {detalle.numero_puesto || '—'}</p>
+            <p><b>Giro comercial:</b> {detalle.giro_comercial}</p>
+            <p><b>Estado:</b> {detalle.estado}</p>
+            <p><b>Correo:</b> {detalle.correo}</p>
+            <p><b>Teléfono:</b> {detalle.telefono || '—'}</p>
+            <div style={{ marginTop: '10px' }}>
+              <button onClick={() => setDetalle(null)}>Cerrar</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL: REGISTRAR LOCATARIO */}
+      {modalNuevo && (
+        <div className="modal-detalle">
+          <div className="modal-contenido">
+            <h2>Registrar locatario</h2>
+
+            <label>Nombre completo</label>
+            <input
+              type="text"
+              value={nuevoLocatario.nombre}
+              onChange={(e) => setNuevoLocatario(f => ({ ...f, nombre: e.target.value }))}
+              placeholder="Ej. Isaí Santos R."
+            />
+
+            <label>Correo</label>
+            <input
+              type="email"
+              value={nuevoLocatario.correo}
+              onChange={(e) => setNuevoLocatario(f => ({ ...f, correo: e.target.value }))}
+              placeholder="correo@ejemplo.com"
+            />
+
+            <label>Contraseña</label>
+            <input
+              type="password"
+              value={nuevoLocatario.password}
+              onChange={(e) => setNuevoLocatario(f => ({ ...f, password: e.target.value }))}
+            />
+
+            <label>Teléfono</label>
+            <input
+              type="text"
+              value={nuevoLocatario.telefono}
+              onChange={(e) => setNuevoLocatario(f => ({ ...f, telefono: e.target.value }))}
+            />
+
+            <label>Giro comercial</label>
+            <input
+              type="text"
+              value={nuevoLocatario.giro_comercial}
+              onChange={(e) => setNuevoLocatario(f => ({ ...f, giro_comercial: e.target.value }))}
+              placeholder="Ej. Verdulería"
+            />
+
+            <div style={{ marginTop: '10px' }}>
+              <button onClick={crearLocatario}>Registrar</button>
+              <button onClick={() => setModalNuevo(false)}>Cancelar</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL: EDITAR LOCATARIO */}
+      {editando && (
+        <div className="modal-detalle">
+          <div className="modal-contenido">
+            <h2>Editar locatario</h2>
+            <p style={{ marginTop: 0 }}><b>{editando.nombre}</b></p>
+
+            <label>Correo</label>
+            <input
+              type="email"
+              value={formEdicion.correo}
+              onChange={(e) => setFormEdicion(f => ({ ...f, correo: e.target.value }))}
+            />
+
+            <label>Teléfono</label>
+            <input
+              type="text"
+              value={formEdicion.telefono}
+              onChange={(e) => setFormEdicion(f => ({ ...f, telefono: e.target.value }))}
+            />
+
+            <label>Giro comercial</label>
+            <input
+              type="text"
+              value={formEdicion.giro_comercial}
+              onChange={(e) => setFormEdicion(f => ({ ...f, giro_comercial: e.target.value }))}
+            />
+
+            <div style={{ marginTop: '10px' }}>
+              <button onClick={guardarEdicion}>Guardar cambios</button>
+              <button onClick={() => setEditando(null)}>Cancelar</button>
+            </div>
+          </div>
+        </div>
+      )}
 
     </PageLayout>
   );
