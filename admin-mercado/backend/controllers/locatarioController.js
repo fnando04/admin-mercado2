@@ -42,6 +42,28 @@ exports.pagar = async (req, res) => {
   }
 };
 
+// EL LOCATARIO EDITA SU GIRO COMERCIAL Y SUS DATOS DE CONTACTO
+exports.editarMiPerfil = async (req, res) => {
+  try {
+    const { id_locatario, telefono, correo, giro_comercial } = req.body;
+
+    if (!id_locatario || !correo || !correo.trim() || !giro_comercial || !giro_comercial.trim()) {
+      return res.status(400).json({ error: "Faltan datos: correo y giro comercial son obligatorios" });
+    }
+
+    await db.query(
+      "CALL sp_editar_mi_perfil_locatario(?, ?, ?, ?)",
+      [id_locatario, telefono || null, correo.trim(), giro_comercial.trim()]
+    );
+    res.json({ mensaje: "Datos actualizados correctamente" });
+  } catch (error) {
+    if (error.code === "ER_DUP_ENTRY") {
+      return res.status(400).json({ error: "Ese correo ya está en uso por otro usuario" });
+    }
+    res.status(500).json({ error: error.message });
+  }
+};
+
 // INCIDENCIAS DEL LOCATARIO LOGUEADO
 exports.misIncidencias = async (req, res) => {
   try {

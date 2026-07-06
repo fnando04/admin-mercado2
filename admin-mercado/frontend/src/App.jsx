@@ -10,6 +10,7 @@ import RegistrarUsuario     from './pages/RegistrarUsuario';
 import GestionAdmin from './pages/GestionAdmin';
 import LocatarioInicio from './pages/LocatarioInicio';
 import MisPagos from './pages/MisPagos';
+import MisIncidencias from './pages/LocatarioIncidencias';
 
 
 import './styles/global.css';
@@ -58,6 +59,7 @@ function AppRoutes() {
         <Route path="/administradores" element={<GestionAdmin />} />
         <Route path="/locatario/inicio" element={<LocatarioInicio />} />
         <Route path="/locatario/pagos" element={<MisPagos />} />
+        <Route path="/locatario/incidencias" element={<MisIncidencias />} />
       </Routes>
     </>
   );

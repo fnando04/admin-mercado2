@@ -10,22 +10,34 @@ const NOMBRES_MES = [
 export default function LocatarioInicio() {
   const [info, setInfo] = useState(null);
   const [avisos, setAvisos] = useState([]);
+  const [idLocatario, setIdLocatario] = useState(null);
+
+  const [editando, setEditando] = useState(false);
+  const [form, setForm] = useState({ giro_comercial: '', telefono: '', correo: '' });
 
   useEffect(() => {
     const guardado = localStorage.getItem('usuario');
     const usuario = guardado ? JSON.parse(guardado) : null;
     if (!usuario) return;
+    setIdLocatario(usuario.id);
 
-    fetch(`http://localhost:3000/api/locatario/mi-info?id_locatario=${usuario.id}`)
-      .then(res => res.json())
-      .then(data => setInfo(data))
-      .catch(err => console.error(err));
+    cargarInfo(usuario.id);
 
     fetch("http://localhost:3000/api/avisos")
       .then(res => res.json())
       .then(data => setAvisos(Array.isArray(data) ? data.slice(0, 3) : []))
       .catch(err => console.error(err));
   }, []);
+
+  function cargarInfo(id) {
+    fetch(`http://localhost:3000/api/locatario/mi-info?id_locatario=${id}`)
+      .then(res => res.json())
+      .then(data => {
+        if (data && !data.error) setInfo(data);
+        else console.error(data?.error);
+      })
+      .catch(err => console.error(err));
+  }
 
   const etiquetaEstado = (estado) => {
     if (!estado) return "Sin registro";
@@ -36,6 +48,53 @@ export default function LocatarioInicio() {
   const hoy = new Date();
   const mesActualLabel = `${NOMBRES_MES[hoy.getMonth() + 1]} ${hoy.getFullYear()}`;
 
+  function iniciarEdicion() {
+    setForm({
+      giro_comercial: info.giro_comercial || '',
+      telefono: info.telefono || '',
+      correo: info.correo || ''
+    });
+    setEditando(true);
+  }
+
+  async function guardarEdicion() {
+    if (!form.correo.trim() || !form.giro_comercial.trim()) {
+      alert("El correo y el giro comercial no pueden quedar vacíos");
+      return;
+    }
+    try {
+      const res = await fetch("http://localhost:3000/api/locatario/mi-perfil", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          id_locatario: idLocatario,
+          telefono: form.telefono,
+          correo: form.correo,
+          giro_comercial: form.giro_comercial
+        })
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        alert(data.error || "No se pudo actualizar tu información");
+        return;
+      }
+
+      // Si cambió el correo, lo actualizamos también en localStorage para que quede consistente
+      const guardado = localStorage.getItem('usuario');
+      if (guardado) {
+        const usuario = JSON.parse(guardado);
+        usuario.correo = form.correo;
+        localStorage.setItem('usuario', JSON.stringify(usuario));
+      }
+
+      setEditando(false);
+      cargarInfo(idLocatario);
+    } catch (err) {
+      console.error(err);
+      alert("Error de conexión al actualizar tu información");
+    }
+  }
+
   return (
     <LocatarioLayout>
       <div className="page-head">
@@ -43,7 +102,7 @@ export default function LocatarioInicio() {
         <p className="page-subtitulo">Resumen de tu puesto en el Mercado Municipal</p>
       </div>
 
-      {info && (
+      {info && !editando && (
         <div className="stat-grid">
           <div className="stat-card">
             <div className="stat-card-top">
@@ -68,6 +127,65 @@ export default function LocatarioInicio() {
             </div>
             <div className="stat-valor" style={{ fontSize: '15px' }}>{info.telefono || "—"}</div>
             <div className="stat-meta">{info.correo}</div>
+          </div>
+        </div>
+      )}
+
+      {info && !editando && (
+        <div className="actions-row">
+          <div className="actions-spacer"></div>
+          <button className="btn btnOutline" onClick={iniciarEdicion}>
+            <i className="fa-solid fa-pen"></i> Editar mi puesto y contacto
+          </button>
+        </div>
+      )}
+
+      {info && editando && (
+        <div className="tabla-wrap" style={{ padding: '20px 24px', marginBottom: '24px' }}>
+          <div className="tabla-header" style={{ padding: 0, border: 'none', marginBottom: '12px' }}>
+            <span className="tabla-titulo">Editar mi puesto y contacto</span>
+          </div>
+
+          <label style={{ display: 'block', fontSize: '11px', fontWeight: 500, color: 'var(--gris-400)', textTransform: 'uppercase', letterSpacing: '.06em', marginBottom: '6px' }}>
+            Giro comercial
+          </label>
+          <input
+            type="text"
+            value={form.giro_comercial}
+            onChange={(e) => setForm(f => ({ ...f, giro_comercial: e.target.value }))}
+            placeholder="Ej. Verduras y Frutas"
+            style={{ width: '100%', padding: '9px 12px', borderRadius: '8px', border: '1.5px solid var(--gris-200)', marginBottom: '14px' }}
+          />
+
+          <label style={{ display: 'block', fontSize: '11px', fontWeight: 500, color: 'var(--gris-400)', textTransform: 'uppercase', letterSpacing: '.06em', marginBottom: '6px' }}>
+            Teléfono
+          </label>
+          <input
+            type="text"
+            value={form.telefono}
+            onChange={(e) => setForm(f => ({ ...f, telefono: e.target.value }))}
+            placeholder="Tu número de contacto"
+            style={{ width: '100%', padding: '9px 12px', borderRadius: '8px', border: '1.5px solid var(--gris-200)', marginBottom: '14px' }}
+          />
+
+          <label style={{ display: 'block', fontSize: '11px', fontWeight: 500, color: 'var(--gris-400)', textTransform: 'uppercase', letterSpacing: '.06em', marginBottom: '6px' }}>
+            Correo
+          </label>
+          <input
+            type="email"
+            value={form.correo}
+            onChange={(e) => setForm(f => ({ ...f, correo: e.target.value }))}
+            placeholder="correo@ejemplo.com"
+            style={{ width: '100%', padding: '9px 12px', borderRadius: '8px', border: '1.5px solid var(--gris-200)', marginBottom: '14px' }}
+          />
+
+          <div>
+            <button className="btn btnPrimary" onClick={guardarEdicion} style={{ marginRight: '8px' }}>
+              Guardar cambios
+            </button>
+            <button className="btn btnOutline" onClick={() => setEditando(false)}>
+              Cancelar
+            </button>
           </div>
         </div>
       )}
