@@ -28,6 +28,9 @@ app.get("/test-db", async (req, res) => {
 const authRoutes = require("./routes/auth");
 app.use("/api", authRoutes);
 
+const registroRoutes = require("./routes/registro");
+app.use("/api/registro", registroRoutes);
+
 const pagosRoutes = require("./routes/pagos");
 app.use("/api/pagos", pagosRoutes);
 
@@ -46,7 +49,6 @@ app.use("/api/avisos", avisosRoutes);
 
 const administradoresRoutes = require("./routes/admin");
 app.use("/api/administradores", administradoresRoutes);
-
 
 const locatarioRoutes = require("./routes/locatario");
 app.use("/api/locatario", locatarioRoutes);

@@ -5,12 +5,13 @@ import './RegistrarUsuario.css';
 export default function RegistrarUsuario() {
   const [mostrarPassword, setMostrarPassword] = useState(false);
   const [formData, setFormData] = useState({
-    usuario: '',
     nombre: '',
     apellidoPaterno: '',
     apellidoMaterno: '',
     email: '',
     password: '',
+    telefono: '',
+    giroComercial: '',
   });
 
   const navigate = useNavigate();
@@ -20,11 +21,41 @@ export default function RegistrarUsuario() {
     setFormData((prev) => ({ ...prev, [id]: value }));
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    // Aquí después conectas con tu backend (POST a tu API de registro)
-    // Por ahora navega directo al login tras "crear" la cuenta
-    navigate('/');
+
+    // Tu BD guarda el nombre completo en un solo campo, así que lo unimos aquí
+    const nombreCompleto = [formData.nombre, formData.apellidoPaterno, formData.apellidoMaterno]
+      .filter(Boolean)
+      .join(' ');
+
+    try {
+      const respuesta = await fetch("http://localhost:3000/api/registro", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          nombre: nombreCompleto,
+          correo: formData.email,
+          password: formData.password,
+          telefono: formData.telefono,
+          giro_comercial: formData.giroComercial,
+        })
+      });
+
+      const datos = await respuesta.json();
+
+      if (!respuesta.ok) {
+        alert(datos.error || "No se pudo crear la cuenta");
+        return;
+      }
+
+      alert(datos.mensaje || "Cuenta creada correctamente");
+      navigate('/login');
+
+    } catch (error) {
+      console.error(error);
+      alert("No se pudo conectar con el servidor.");
+    }
   };
 
   return (
@@ -33,28 +64,13 @@ export default function RegistrarUsuario() {
 
         <div className="register-header">
           <div className="header-title-box">
-            <h1>Registrar Usuario</h1>
+            <h1>Registrar Locatario</h1>
             <i className="fa-regular fa-user"></i>
           </div>
         </div>
 
         <form onSubmit={handleSubmit}>
           <div className="form-grid">
-
-            <div className="form-group">
-              <label htmlFor="usuario">Usuario</label>
-              <div className="input-container">
-                <i className="fa-regular fa-id-badge"></i>
-                <input
-                  type="text"
-                  id="usuario"
-                  placeholder="Usuario"
-                  value={formData.usuario}
-                  onChange={handleChange}
-                  required
-                />
-              </div>
-            </div>
 
             <div className="form-group">
               <label htmlFor="nombre">Nombre(s)</label>
@@ -96,7 +112,6 @@ export default function RegistrarUsuario() {
                   placeholder="Apellido Materno"
                   value={formData.apellidoMaterno}
                   onChange={handleChange}
-                  required
                 />
               </div>
             </div>
@@ -110,6 +125,35 @@ export default function RegistrarUsuario() {
                   id="email"
                   placeholder="correo@ejemplo.com"
                   value={formData.email}
+                  onChange={handleChange}
+                  required
+                />
+              </div>
+            </div>
+
+            <div className="form-group">
+              <label htmlFor="telefono">Teléfono</label>
+              <div className="input-container">
+                <i className="fa-solid fa-phone"></i>
+                <input
+                  type="text"
+                  id="telefono"
+                  placeholder="Tu número de contacto"
+                  value={formData.telefono}
+                  onChange={handleChange}
+                />
+              </div>
+            </div>
+
+            <div className="form-group">
+              <label htmlFor="giroComercial">Giro comercial</label>
+              <div className="input-container">
+                <i className="fa-solid fa-shop"></i>
+                <input
+                  type="text"
+                  id="giroComercial"
+                  placeholder="Ej. Verduras y Frutas"
+                  value={formData.giroComercial}
                   onChange={handleChange}
                   required
                 />
@@ -141,9 +185,13 @@ export default function RegistrarUsuario() {
 
           </div>
 
+          <p style={{ fontSize: '12px', color: '#888', marginTop: '4px' }}>
+            Tu cuenta se crea sin puesto asignado — un administrador te asignará uno después.
+          </p>
+
           <div className="form-actions">
             <button type="submit" className="btn-submit">Crear Cuenta</button>
-            <Link to="/" className="back-to-login">
+            <Link to="/login" className="back-to-login">
               <i className="fa-solid fa-arrow-left"></i> Volver al inicio de sesión
             </Link>
           </div>
