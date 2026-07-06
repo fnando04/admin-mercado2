@@ -8,6 +8,9 @@ import Incidencias          from './pages/Incidencias';
 import Login                from './pages/Login';
 import RegistrarUsuario     from './pages/RegistrarUsuario';
 import GestionAdmin from './pages/GestionAdmin';
+import LocatarioInicio from './pages/LocatarioInicio';
+
+
 import './styles/global.css';
 
 // Páginas que NO muestran el navbar (login, registro)
@@ -33,11 +36,12 @@ export default function App() {
 function AppRoutes() {
   return (
     <>
-      {/* Navbar solo en páginas internas */}
+      {/* Navbar de admin solo en páginas internas de admin */}
       <Routes>
-        <Route path="/login"    element={null} />
-        <Route path="/registro" element={null} />
-        <Route path="*"         element={<Navbar />} />
+        <Route path="/login"           element={null} />
+        <Route path="/registro"        element={null} />
+        <Route path="/locatario/*"     element={null} />
+        <Route path="*"                element={<Navbar />} />
       </Routes>
 
       {/* Rutas de las vistas */}
@@ -51,6 +55,7 @@ function AppRoutes() {
         <Route path="/puestos"       element={<GestionPuestos />} />
         <Route path="/incidencias"   element={<Incidencias />} />
         <Route path="/administradores" element={<GestionAdmin />} />
+        <Route path="/locatario/inicio" element={<LocatarioInicio />} />
       </Routes>
     </>
   );

@@ -39,7 +39,11 @@ export default function Login() {
 
     alert("Bienvenido " + datos.user.nombre);
 
-    navigate("/dashboard");
+    if (datos.user.rol === "administrador") {
+      navigate("/dashboard");
+    } else {
+      navigate("/locatario/inicio");
+    }
 
   } catch (error) {
     console.error(error);
