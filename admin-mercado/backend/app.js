@@ -38,7 +38,11 @@ const puestosRoutes = require("./routes/puestos");
 app.use("/api/puestos", puestosRoutes);
 
 
+const incidenciasRoutes = require("./routes/incidencias");
+app.use("/api/incidencias", incidenciasRoutes);
 
+const avisosRoutes = require("./routes/avisos");
+app.use("/api/avisos", avisosRoutes);
 
 //--------------------
 const PORT = 3000;

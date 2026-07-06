@@ -543,3 +543,96 @@ BEGIN
     END IF;
 END //
 DELIMITER ;
+
+
+DELIMITER //
+CREATE PROCEDURE sp_listar_incidencias()
+BEGIN
+    SELECT
+        i.id_incidencia,
+        i.titulo,
+        i.descripcion,
+        i.estado,
+        i.respuesta_admin,
+        DATE_FORMAT(i.fecha_creacion, '%d/%m/%Y')      AS fecha_creacion,
+        DATE_FORMAT(i.fecha_creacion, '%h:%i %p')       AS hora_creacion,
+        DATE_FORMAT(i.fecha_respuesta, '%d/%m/%Y %h:%i %p') AS fecha_respuesta,
+        u.nombre,
+        p.numero_puesto,
+        l.giro_comercial
+    FROM incidencias i
+    INNER JOIN locatarios l ON i.id_locatario = l.id_locatario
+    INNER JOIN usuarios  u ON l.id_locatario  = u.id_usuario
+    LEFT JOIN puestos p ON l.id_puesto_asignado = p.id_puesto
+    ORDER BY i.fecha_creacion DESC;
+END //
+DELIMITER ;
+
+DELIMITER //
+CREATE PROCEDURE sp_incidencias_abiertas()
+BEGIN
+    SELECT
+        i.id_incidencia,
+        i.titulo,
+        u.nombre,
+        p.numero_puesto,
+        DATE_FORMAT(i.fecha_creacion, '%d/%m/%Y') AS fecha
+    FROM incidencias i
+    INNER JOIN locatarios l ON i.id_locatario = l.id_locatario
+    INNER JOIN usuarios  u ON l.id_locatario  = u.id_usuario
+    LEFT JOIN puestos p ON l.id_puesto_asignado = p.id_puesto
+    WHERE i.estado = 'Abierta'
+    ORDER BY i.fecha_creacion DESC;
+END //
+DELIMITER ;
+
+DELIMITER //
+CREATE PROCEDURE sp_locatarios_para_incidencia()
+BEGIN
+    SELECT u.id_usuario AS id_locatario, u.nombre, p.numero_puesto
+    FROM usuarios u
+    INNER JOIN locatarios l ON u.id_usuario = l.id_locatario
+    LEFT JOIN puestos p ON l.id_puesto_asignado = p.id_puesto
+    WHERE u.rol = 'locatario' AND u.activo = 1
+    ORDER BY u.nombre;
+END //
+DELIMITER 
+
+DELIMITER //
+CREATE PROCEDURE sp_listar_avisos()
+BEGIN
+    SELECT
+        id_aviso,
+        titulo,
+        contenido,
+        DATE_FORMAT(fecha_publicacion, '%d/%m/%Y') AS fecha_publicacion,
+        DATE_FORMAT(fecha_vigencia, '%d/%m/%Y')    AS fecha_vigencia,
+        archivado
+    FROM avisos
+    WHERE archivado = 0
+    ORDER BY fecha_publicacion DESC;
+END //
+DELIMITER ;
+
+DELIMITER //
+CREATE PROCEDURE sp_editar_aviso(
+    IN p_id_aviso       INT,
+    IN p_titulo         VARCHAR(150),
+    IN p_contenido      TEXT,
+    IN p_fecha_vigencia DATE
+)
+BEGIN
+    UPDATE avisos
+    SET titulo = p_titulo,
+        contenido = p_contenido,
+        fecha_vigencia = p_fecha_vigencia
+    WHERE id_aviso = p_id_aviso;
+END //
+DELIMITER ;
+
+DELIMITER //
+CREATE PROCEDURE sp_eliminar_aviso(IN p_id_aviso INT)
+BEGIN
+    UPDATE avisos SET archivado = 1 WHERE id_aviso = p_id_aviso;
+END //
+DELIMITER ;
