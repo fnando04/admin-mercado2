@@ -176,6 +176,22 @@ export default function GestionLocatarios() {
     }
   }
 
+  async function reactivar(l) {
+    if (!window.confirm(`¿Reactivar a ${l.nombre}? Podrá volver a iniciar sesión.`)) return;
+    try {
+      const res = await fetch(`http://localhost:3000/api/locatarios/${l.id_usuario}/reactivar`, { method: "PATCH" });
+      const data = await res.json();
+      if (!res.ok) {
+        alert(data.error || "No se pudo reactivar al locatario");
+        return;
+      }
+      cargarLocatarios();
+    } catch (err) {
+      console.error(err);
+      alert("Error de conexión al reactivar al locatario");
+    }
+  }
+
   return (
     <PageLayout>
 
@@ -316,11 +332,10 @@ export default function GestionLocatarios() {
                     </button>
                     <button
                       className="btnIconoFila danger"
-                      title="Suspender"
-                      disabled={l.estado === 'Suspendido'}
-                      onClick={() => suspender(l)}
+                      title={l.estado === 'Suspendido' ? "Reactivar" : "Suspender"}
+                      onClick={() => (l.estado === 'Suspendido' ? reactivar(l) : suspender(l))}
                     >
-                      <i className="fa-solid fa-ban"></i>
+                      <i className={`fa-solid ${l.estado === 'Suspendido' ? 'fa-rotate-left' : 'fa-ban'}`}></i>
                     </button>
                   </div>
                 </td>

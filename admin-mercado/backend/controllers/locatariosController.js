@@ -61,3 +61,14 @@ exports.suspenderLocatario = async (req, res) => {
     res.status(500).json({ error: 'Error al suspender al locatario' });
   }
 };
+
+exports.reactivarLocatario = async (req, res) => {
+  const { id } = req.params;
+  try {
+    await db.query('CALL sp_reactivar_locatario(?)', [id]);
+    res.json({ mensaje: 'Locatario reactivado correctamente' });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Error al reactivar al locatario' });
+  }
+};

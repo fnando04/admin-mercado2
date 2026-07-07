@@ -207,7 +207,7 @@ export default function Dashboard() {
             <button className="accion-btn" onClick={() => navigate('/locatarios?nuevo=1')}><i className="fa-solid fa-user-plus"></i> Nuevo locatario</button>
             <button className="accion-btn" onClick={() => navigate('/incidencias?nuevoAviso=1')}><i className="fa-solid fa-bullhorn"></i> Publicar aviso</button>
             <button className="accion-btn" onClick={() => navigate('/puestos?filtro=disponible')}><i className="fa-solid fa-shop"></i> Puestos libres</button>
-            <button className="accion-btn" onClick={() => navigate('/pagos?todos=1')}><i className="fa-solid fa-file-chart-column"></i> Generar reporte</button>
+            <button className="accion-btn" onClick={() => navigate('/pagos?todos=1')}><i className="fa-solid fa-file-invoice"></i> Generar reporte</button>
             <button className="accion-btn" onClick={() => navigate('/locatarios?estado=Moroso')}><i className="fa-solid fa-user-xmark"></i> Ver morosos</button>
           </div>
         </div>
@@ -227,10 +227,10 @@ export default function Dashboard() {
               {pagos.length === 0 ? (
                 <p style={{ fontSize: 13, color: '#999', padding: '8px 0' }}>Sin pagos registrados</p>
               ) : (
-                pagos.map((p) => {
+                pagos.map((p, i) => {
                   const badge = BADGE_PAGO[p.estado] || BADGE_PAGO.pendiente;
                   return (
-                    <div className="pago-item" key={p.id_usuario + '-' + p.puesto}>
+                    <div className="pago-item" key={p.id_pago ?? `${p.id_usuario}-${p.puesto}-${i}`}>
                       <div
                         className="pago-avatar"
                         style={p.estado === 'moroso' ? { background: '#FDEEEE', color: '#8A2020' } : undefined}
