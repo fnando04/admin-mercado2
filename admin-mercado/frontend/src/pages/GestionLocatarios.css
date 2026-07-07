@@ -97,6 +97,12 @@
 }
 .total-chip b { color: var(--gris-900); }
 
+.filtro-activo {
+  background: var(--verde-800) !important;
+  color: #fff !important;
+  border-color: var(--verde-800) !important;
+}
+
 /* ── TABLA ────────────────────────────────────────── */
 .tabla-wrap {
   background: var(--blanco);

@@ -1,4 +1,5 @@
 import { useMemo, useState, useEffect } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import PageLayout from './PageLayout';
 import './GestionLocatarios.css';
 
@@ -8,9 +9,14 @@ const BADGE_CLASE = {
   Suspendido: 'badge-suspendido',
 };
 
+const generarIniciales = (nombre) =>
+  nombre ? nombre.split(" ").map(n => n[0]).join("").slice(0, 2).toUpperCase() : "";
+
 export default function GestionLocatarios() {
+  const [searchParams, setSearchParams] = useSearchParams();
+
   const [locatarios, setLocatarios] = useState([]);
-  const [busqueda, setBusqueda] = useState('');
+  const [busqueda, setBusqueda] = useState(searchParams.get('buscar') || '');
   const [giro, setGiro] = useState('');
   const [estado, setEstado] = useState('');
 
@@ -27,6 +33,42 @@ export default function GestionLocatarios() {
   useEffect(() => {
     cargarLocatarios();
   }, []);
+
+  // Si venimos del buscador o de las "acciones rápidas" del Dashboard, aplicamos lo que pida la URL.
+  useEffect(() => {
+    if (searchParams.get('nuevo') === '1') {
+      setModalNuevo(true);
+    }
+
+    const estadoParam = searchParams.get('estado');
+    if (estadoParam) {
+      setEstado(estadoParam);
+    }
+
+    if (searchParams.get('nuevo') || estadoParam) {
+      setSearchParams({}, { replace: true });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  useEffect(() => {
+    const termino = searchParams.get('buscar');
+    if (!termino || locatarios.length === 0) return;
+
+    setBusqueda(termino);
+
+    const coincidencias = locatarios.filter(l =>
+      l.nombre.toLowerCase().includes(termino.toLowerCase())
+    );
+
+    if (coincidencias.length === 1) {
+      setDetalle(coincidencias[0]);
+    }
+
+    // Limpiamos el parámetro de la URL para que no se re-dispare al navegar dentro de la página
+    setSearchParams({}, { replace: true });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [locatarios]);
 
   function cargarLocatarios() {
     fetch("http://localhost:3000/api/locatarios")
@@ -181,13 +223,13 @@ export default function GestionLocatarios() {
       {/* Acciones superiores */}
       <div className="actions-row">
         <button
-          className="btn btnOutline"
+          className={`btn btnOutline ${estado === 'Moroso' ? 'filtro-activo' : ''}`}
           onClick={() => alternarFiltroEstado('Moroso')}
         >
           <i className="fa-solid fa-user-xmark"></i> Ver morosos
         </button>
         <button
-          className="btn btnDanger"
+          className={`btn btnDanger ${estado === 'Suspendido' ? 'filtro-activo' : ''}`}
           onClick={() => alternarFiltroEstado('Suspendido')}
         >
           <i className="fa-solid fa-ban"></i> Ver suspendidos
@@ -253,7 +295,7 @@ export default function GestionLocatarios() {
                 <td className="td-num">{l.numero_puesto || '—'}</td>
                 <td>
                   <div className="td-nombre-wrap">
-                    <div className="nombre-avatar">{l.iniciales}</div>
+                    <div className="nombre-avatar">{generarIniciales(l.nombre)}</div>
                     <span className="td-nombre">{l.nombre}</span>
                   </div>
                 </td>

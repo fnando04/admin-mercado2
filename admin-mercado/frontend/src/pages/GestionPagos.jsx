@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import './GestionPagos.css';
 
 const NOMBRES_MES = [
@@ -24,12 +25,16 @@ const OPCIONES_MES = [OPCION_TODOS, ...generarOpcionesMeses(12)];
 const MESES_PARA_PAGAR = OPCIONES_MES.filter(o => !o.todos); // el modal de "registrar pago" nunca usa "todos"
 
 export default function GestionPagos() {
+  const [searchParams, setSearchParams] = useSearchParams();
+
   const [filtros, setFiltros] = useState({ pagado: false, pendiente: false, moroso: false });
   const [pagosData, setPagosData] = useState([]);
   const [detallePago, setDetallePago] = useState(null);
 
-  // Mes que se está viendo/generando en la tabla)
-  const [mesSeleccionado, setMesSeleccionado] = useState(OPCIONES_MES[0]);
+  // Mes que se está viendo/generando en la tabla (respeta ?todos=1 si viene del Dashboard)
+  const [mesSeleccionado, setMesSeleccionado] = useState(
+    searchParams.get('todos') === '1' ? OPCION_TODOS : OPCIONES_MES[0]
+  );
 
   // Modal de "Registrar pago"
   const [modalPago, setModalPago] = useState(false);
@@ -56,12 +61,14 @@ export default function GestionPagos() {
     moroso: pagosData.filter(p => p.estado_pago === 'vencido').length,
   };
 
-  // OJO: esto se ejecuta UNA sola vez al cargar la página, no cada vez que cambias de mes.
-  // Antes se ejecutaba en cada cambio de mes y eso iba marcando "pendientes" como "vencidos"
-  // constantemente (según la fecha_limite ya pasada), haciendo que desaparecieran de la vista.
   useEffect(() => {
     fetch("http://localhost:3000/api/pagos/actualizar-vencidos", { method: "POST" })
       .catch(err => console.error(err));
+
+    if (searchParams.get('todos')) {
+      setSearchParams({}, { replace: true });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   useEffect(() => {
@@ -80,7 +87,6 @@ export default function GestionPagos() {
       .catch(err => console.error(err));
   }
 
-  // Genera los pagos pendientes del mes elegido por el administrador para todos los locatarios asignados
   async function generarMes() {
     if (mesSeleccionado.todos) {
       alert("Selecciona un mes específico (no 'Todos los meses') para poder generarlo");
@@ -109,10 +115,8 @@ export default function GestionPagos() {
     setDetallePago(p);
   }
 
-  // Abre el modal de "Registrar pago" precargado con la fila/locatario elegido
   function abrirRegistrarPago(p) {
     setFilaSeleccionada(p);
-    // Si estás en "Todos los meses", el mes por default es el que trae la fila; si no, el mes que estás viendo
     const mesPorDefault = mesSeleccionado.todos
       ? MESES_PARA_PAGAR.find(o => o.mes === p.mes_pagado && o.anio === p.anio_pagado) || MESES_PARA_PAGAR[0]
       : mesSeleccionado;
@@ -138,8 +142,6 @@ export default function GestionPagos() {
       const data = await res.json();
 
       if (!res.ok) {
-        // Importante: si el backend falla, avisamos el error real y NO cerramos el modal
-        // ni recargamos la tabla, para que quede claro que no se guardó nada.
         alert(data.error || "No se pudo registrar el pago");
         return;
       }
@@ -163,8 +165,6 @@ export default function GestionPagos() {
     return estado.charAt(0).toUpperCase() + estado.slice(1);
   };
 
-  // Genera un comprobante en PDF sencillo usando el diálogo de impresión del navegador
-  // (sin dependencias extra): abre una ventana con una tabla ordenada y llama a print().
   function generarComprobantePDF() {
     const filas = pagosFiltrados;
     const fechaGeneracion = new Date().toLocaleDateString("es-MX");
@@ -241,7 +241,6 @@ export default function GestionPagos() {
         <p className="page-subtitulo">Control de renta mensual y morosidad · {mesSeleccionado.label}</p>
       </div>
 
-      {/* Stats */}
       <div className="stat-grid">
         <div className="stat-card">
           <div className="stat-card-top">
@@ -277,7 +276,6 @@ export default function GestionPagos() {
         </div>
       </div>
 
-      {/* Acciones */}
       <div className="actions-row">
           <button className="btn btnOutline" onClick={() => setFiltros({ pagado: false, pendiente: false, moroso: false })}>
             <i className="fa-solid fa-list"></i> Todos los pagos
@@ -294,7 +292,6 @@ export default function GestionPagos() {
         </button>
       </div>
 
-      {/* Filtros */}
       <div className="filtros-bar">
         <div className="filtro-grupo">
           <span className="filtro-label">Mes</span>
@@ -305,7 +302,7 @@ export default function GestionPagos() {
               const opt = OPCIONES_MES.find(o => o.label === e.target.value);
               if (opt) {
                 setMesSeleccionado(opt);
-                setFiltros({ pagado: false, pendiente: false, moroso: false }); // limpiamos filtros al cambiar de mes
+                setFiltros({ pagado: false, pendiente: false, moroso: false });
               }
             }}
           >
@@ -318,7 +315,6 @@ export default function GestionPagos() {
         <div className="total-chip">Mostrando <b>{pagosFiltrados.length}</b> {mesSeleccionado.todos ? "registros" : "locatarios"}</div>
       </div>
 
-      {/* Tabla */}
       <div className="tabla-wrap">
         <div className="tabla-header">
           <span className="tabla-titulo">Tabla de pagos</span>
@@ -338,29 +334,23 @@ export default function GestionPagos() {
           <tbody>
             {pagosFiltrados.map((p) => (
               <tr key={mesSeleccionado.todos ? p.id_pago : p.id_puesto}>
-
                 <td className="td-num">{p.id_puesto}</td>
-
                 <td>
                   <div className="td-nombre-wrap">
                     <div className="nombre-avatar">{generarIniciales(p.nombre)}</div>
                     <span className="td-nombre">{p.nombre}</span>
                   </div>
                 </td>
-
                 {mesSeleccionado.todos && (
                   <td>{NOMBRES_MES[p.mes_pagado]} {p.anio_pagado}</td>
                 )}
-
                 <td className="td-fecha">{p.vence || "—"}</td>
-
                 <td>
                   <span className={`badge badge-${p.estado_pago}`}>
                     <span className="bdot"></span>
                     {etiquetaEstado(p.estado_pago)}
                   </span>
                 </td>
-
                 <td>
                   <div className="td-acciones">
                     {p.estado_pago !== "pagado" && (
@@ -368,13 +358,11 @@ export default function GestionPagos() {
                         <i className="fa-solid fa-money-bill"></i> Registrar pago
                       </button>
                     )}
-
                     <button className="btnIconoFila" onClick={() => verDetalle(p)}>
                       <i className="fa-regular fa-eye"></i>
                     </button>
                   </div>
                 </td>
-
               </tr>
             ))}
           </tbody>
@@ -383,19 +371,13 @@ export default function GestionPagos() {
         {detallePago && (
           <div className="modal-detalle">
             <div className="modal-contenido">
-
               <h2>Detalle de pago</h2>
-
               <p><b>Locatario:</b> {detallePago.nombre}</p>
               <p><b>Puesto:</b> {detallePago.numero_puesto}</p>
               <p><b>Giro:</b> {detallePago.giro_comercial}</p>
               <p><b>Estado:</b> {etiquetaEstado(detallePago.estado_pago)}</p>
               <p><b>Último pago:</b> {detallePago.ultimo_pago || "Sin registro"}</p>
-
-              <button onClick={() => setDetallePago(null)}>
-                Cerrar
-              </button>
-
+              <button onClick={() => setDetallePago(null)}>Cerrar</button>
             </div>
           </div>
         )}
@@ -403,34 +385,20 @@ export default function GestionPagos() {
         {modalPago && filaSeleccionada && (
           <div className="modal-detalle">
             <div className="modal-contenido">
-
               <h2>Registrar pago</h2>
-
               <p><b>Locatario:</b> {filaSeleccionada.nombre}</p>
               <p><b>Puesto:</b> {filaSeleccionada.numero_puesto}</p>
-
-              {/* MES A PAGAR: fijo, es el mes que ya trae la fila seleccionada */}
               <p><b>Mes a pagar:</b> {mesModalPago.label}</p>
-
-              {/* FECHA DE PAGO */}
               <label>Fecha de pago</label>
               <input
                 type="date"
                 value={fechaPago}
                 onChange={(e) => setFechaPago(e.target.value)}
               />
-
-              {/* BOTONES */}
               <div style={{ marginTop: "10px" }}>
-                <button onClick={confirmarPago}>
-                  Confirmar pago
-                </button>
-
-                <button onClick={() => { setModalPago(false); setFilaSeleccionada(null); }}>
-                  Cancelar
-                </button>
+                <button onClick={confirmarPago}>Confirmar pago</button>
+                <button onClick={() => { setModalPago(false); setFilaSeleccionada(null); }}>Cancelar</button>
               </div>
-
             </div>
           </div>
         )}

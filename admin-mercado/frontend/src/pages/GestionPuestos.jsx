@@ -1,12 +1,15 @@
 import { useEffect, useState } from "react";
+import { useSearchParams } from "react-router-dom";
 import './GestionPuestos.css';
 
 export default function GestionPuestos() {
+  const [searchParams, setSearchParams] = useSearchParams();
+
   const [puestosData, setPuestosData] = useState([]);
   const [sel, setSel] = useState(null);
   const [mostrarModal, setMostrarModal] = useState(false);
   const [locatarios, setLocatarios] = useState([]);
-  const [filtro, setFiltro] = useState("todos");
+  const [filtro, setFiltro] = useState(searchParams.get('filtro') || "todos");
 
   const puestosFiltrados = puestosData.filter((p) => {
 
@@ -22,6 +25,12 @@ export default function GestionPuestos() {
 
   useEffect(() => {
     obtenerPuestos();
+
+    // Si venimos del Dashboard con ?filtro=disponible (o asignado), limpiamos la URL
+    if (searchParams.get('filtro')) {
+      setSearchParams({}, { replace: true });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   async function obtenerPuestos() {

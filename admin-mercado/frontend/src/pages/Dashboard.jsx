@@ -141,7 +141,7 @@ export default function Dashboard() {
         <div className="panel">
           <div className="panel-head">
             <span className="panel-titulo">Ocupación por giro comercial</span>
-            <a className="panel-link" href="#"><i className="fa-solid fa-arrow-right"></i> Ver detalle</a>
+            <button className="panel-link" style={{ background: 'none', border: 'none', cursor: 'pointer' }} onClick={() => navigate('/locatarios')}><i className="fa-solid fa-arrow-right"></i> Ver detalle</button>
           </div>
           <div className="panel-body">
             <div className="giro-lista">
@@ -179,7 +179,12 @@ export default function Dashboard() {
                 <p style={{ fontSize: 13, color: '#999', padding: '8px 0' }}>Sin incidencias activas</p>
               ) : (
                 incidencias.map((inc) => (
-                  <div className={`incidencia-item ${inc.severidad}`} key={inc.id_incidencia}>
+                  <div
+                    className={`incidencia-item ${inc.severidad}`}
+                    key={inc.id_incidencia}
+                    style={{ cursor: 'pointer' }}
+                    onClick={() => navigate(`/incidencias?verIncidencia=${inc.id_incidencia}`)}
+                  >
                     <div className="inc-dot"></div>
                     <div className="inc-info">
                       <div className="inc-titulo">{inc.titulo}</div>
@@ -199,11 +204,11 @@ export default function Dashboard() {
             <span className="acciones-titulo">Acciones rápidas</span>
           </div>
           <div className="acciones-body">
-            <button className="accion-btn" onClick={() => navigate('/locatarios')}><i className="fa-solid fa-user-plus"></i> Nuevo locatario</button>
-            <button className="accion-btn" onClick={() => navigate('/incidencias')}><i className="fa-solid fa-bullhorn"></i> Publicar aviso</button>
-            <button className="accion-btn" onClick={() => navigate('/puestos')}><i className="fa-solid fa-shop"></i> Puestos libres</button>
-            <button className="accion-btn" onClick={() => navigate('/pagos')}><i className="fa-solid fa-file-chart-column"></i> Generar reporte</button>
-            <button className="accion-btn" onClick={() => navigate('/pagos')}><i className="fa-solid fa-user-xmark"></i> Ver morosos</button>
+            <button className="accion-btn" onClick={() => navigate('/locatarios?nuevo=1')}><i className="fa-solid fa-user-plus"></i> Nuevo locatario</button>
+            <button className="accion-btn" onClick={() => navigate('/incidencias?nuevoAviso=1')}><i className="fa-solid fa-bullhorn"></i> Publicar aviso</button>
+            <button className="accion-btn" onClick={() => navigate('/puestos?filtro=disponible')}><i className="fa-solid fa-shop"></i> Puestos libres</button>
+            <button className="accion-btn" onClick={() => navigate('/pagos?todos=1')}><i className="fa-solid fa-file-chart-column"></i> Generar reporte</button>
+            <button className="accion-btn" onClick={() => navigate('/locatarios?estado=Moroso')}><i className="fa-solid fa-user-xmark"></i> Ver morosos</button>
           </div>
         </div>
       </div>
@@ -215,7 +220,7 @@ export default function Dashboard() {
         <div className="panel">
           <div className="panel-head">
             <span className="panel-titulo">Pagos recientes</span>
-            <button className="panel-link" style={{ background: 'none', border: 'none', cursor: 'pointer' }} onClick={() => navigate('/pagos')}>Ver todos <i className="fa-solid fa-arrow-right"></i></button>
+            <button className="panel-link" style={{ background: 'none', border: 'none', cursor: 'pointer' }} onClick={() => navigate('/pagos?todos=1')}>Ver todos <i className="fa-solid fa-arrow-right"></i></button>
           </div>
           <div className="panel-body">
             <div className="pagos-lista">
