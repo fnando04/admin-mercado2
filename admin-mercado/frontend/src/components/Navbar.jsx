@@ -1,5 +1,6 @@
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useState, useEffect, useRef } from 'react';
+import socket from "../socket";
 import './Navbar.css';
 
 export default function Navbar() {
@@ -36,10 +37,38 @@ export default function Navbar() {
     }
   }, []);
 
-  // TODO: conectar a incidencias abiertas cuando esté esa interfaz lista
+  // Cargar incidencias abiertas al iniciar
   useEffect(() => {
-    setNotificaciones([]);
+    cargarNotificaciones();
   }, []);
+
+  // Escuchar cambios en tiempo real
+  useEffect(() => {
+    const refrescar = (data) => {
+      console.log("📥 Evento recibido:", data);
+      cargarNotificaciones();
+    };
+
+    socket.on("nueva_incidencia", refrescar);
+    socket.on("incidencia_respondida", refrescar);
+    socket.on("incidencia_cerrada", refrescar);
+
+    return () => {
+      socket.off("nueva_incidencia", refrescar);
+      socket.off("incidencia_respondida", refrescar);
+      socket.off("incidencia_cerrada", refrescar);
+    };
+  }, []);
+
+  function cargarNotificaciones() {
+    fetch("http://localhost:3000/api/incidencias/abiertas")
+      .then((res) => res.json())
+      .then((data) => {
+        console.log("📋 Incidencias abiertas:", data);
+        setNotificaciones(Array.isArray(data) ? data : []);
+      })
+      .catch((err) => console.error(err));
+  }
 
   // Cerrar dropdowns al hacer clic fuera
   useEffect(() => {
@@ -99,16 +128,30 @@ export default function Navbar() {
 
           {mostrarNotif && (
             <div className="notif-dropdown">
-              <div className="notif-dropdown-header">Notificaciones</div>
+              <div className="notif-dropdown-header">
+                Incidencias abiertas {notificaciones.length > 0 && `(${notificaciones.length})`}
+              </div>
               {notificaciones.length === 0 ? (
                 <div className="notif-item-vacio">No tienes notificaciones</div>
               ) : (
                 notificaciones.map((n, i) => (
-                  <div className="notif-item" key={n.id || i}>
-                    <p>{n.mensaje || n.titulo}</p>
-                    {n.fecha && <span>{n.fecha}</span>}
-                  </div>
-                ))
+  <div
+    className="notif-item"
+    key={n.id_incidencia || i}
+    style={{ cursor: "pointer" }}
+    onClick={() => {
+      setMostrarNotif(false);
+      navigate("/incidencias");
+    }}
+  >
+    <p>
+      {n.titulo}
+      {n.nombre ? ` · ${n.nombre}` : ""}
+    </p>
+
+    {n.fecha && <span>{n.fecha}</span>}
+  </div>
+))
               )}
             </div>
           )}

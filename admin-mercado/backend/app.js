@@ -4,6 +4,10 @@ const db = require("./config/db");
 
 const app = express();
 
+//SOCKET
+const http = require("http");
+const { initSocket } = require("./socket");
+
 app.use(cors());
 app.use(express.json());
 
@@ -53,8 +57,8 @@ app.use("/api/administradores", administradoresRoutes);
 const locatarioRoutes = require("./routes/locatario");
 app.use("/api/locatario", locatarioRoutes);
 //--------------------
-const PORT = 3000;
 
-app.listen(PORT, () => {
-    console.log(`Servidor iniciado en puerto ${PORT}`);
-});
+const server = http.createServer(app);
+initSocket(server);
+ 
+server.listen(3000, () => console.log("Servidor corriendo en puerto 3000"));

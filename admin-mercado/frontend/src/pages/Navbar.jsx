@@ -1,17 +1,98 @@
-import { Link, useLocation } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { useState, useEffect, useRef } from 'react';
+import socket from '../socket'; 
 import './Navbar.css';
 
-const LINKS = [
-  { to: '/dashboard', icon: 'fa-house', label: 'Dashboard' },
-  { to: '/locatarios', icon: 'fa-users', label: 'Locatarios' },
-  { to: '/puestos', icon: 'fa-shop', label: 'Puestos' },
-  { to: '/pagos', icon: 'fa-credit-card', label: 'Pagos' },
-  { to: '/incidencias', icon: 'fa-triangle-exclamation', label: 'Incidencias', badge: 3 },
-  { to: '/reportes', icon: 'fa-chart-bar', label: 'Reportes' },
-];
-
-export default function Navbar({ usuarioNombre = 'Administrador' }) {
+export default function Navbar() {
   const location = useLocation();
+  const navigate = useNavigate();
+
+  const [busqueda, setBusqueda] = useState('');
+  const [mostrarNotif, setMostrarNotif] = useState(false);
+  const [mostrarUser, setMostrarUser] = useState(false);
+  const [notificaciones, setNotificaciones] = useState([]);
+  const [admin, setAdmin] = useState({ nombre: 'Administrador' });
+
+  const notifRef = useRef(null);
+  const userRef = useRef(null);
+
+  const links = [
+    { to: '/dashboard',   icon: 'fa-house',              label: 'Dashboard' },
+    { to: '/locatarios',  icon: 'fa-users',              label: 'Locatarios' },
+    { to: '/puestos',     icon: 'fa-shop',               label: 'Puestos' },
+    { to: '/pagos',       icon: 'fa-credit-card',        label: 'Pagos' },
+    { to: '/incidencias', icon: 'fa-triangle-exclamation', label: 'Incidencias' },
+  ];
+
+  useEffect(() => {
+    const guardado = localStorage.getItem('usuario');
+    if (guardado) {
+      try {
+        setAdmin(JSON.parse(guardado));
+      } catch {
+        setAdmin({ nombre: 'Administrador' });
+      }
+    }
+  }, []);
+
+  // Carga inicial de notificaciones: incidencias abiertas ahora mismo
+useEffect(() => {
+  const onNueva = (data) => {
+    console.log("📥 Evento recibido:", data);
+    cargarNotificaciones();
+  };
+
+  socket.on("nueva_incidencia", onNueva);
+
+  return () => {
+    socket.off("nueva_incidencia", onNueva);
+  };
+}, []);
+
+  // Tiempo real: cualquier cambio en incidencias vuelve a pedir la lista de abiertas
+  useEffect(() => {
+    function refrescar() {
+      console.log("evento recibido, refrescando notificaciones");
+      cargarNotificaciones();
+    }
+    socket.on("nueva_incidencia", refrescar);
+    socket.on("incidencia_respondida", refrescar);
+    socket.on("incidencia_cerrada", refrescar);
+
+    return () => {
+      socket.off("nueva_incidencia", refrescar);
+      socket.off("incidencia_respondida", refrescar);
+      socket.off("incidencia_cerrada", refrescar);
+    };
+  }, []);
+
+  function cargarNotificaciones() {
+    fetch("http://localhost:3000/api/incidencias/abiertas")
+      .then(res => res.json())
+      .then(data => setNotificaciones(Array.isArray(data) ? data : []))
+      .catch(err => console.error(err));
+  }
+
+  useEffect(() => {
+    function manejarClickFuera(e) {
+      if (notifRef.current && !notifRef.current.contains(e.target)) setMostrarNotif(false);
+      if (userRef.current && !userRef.current.contains(e.target)) setMostrarUser(false);
+    }
+    document.addEventListener('mousedown', manejarClickFuera);
+    return () => document.removeEventListener('mousedown', manejarClickFuera);
+  }, []);
+
+  function buscarLocatario(e) {
+    e.preventDefault();
+    if (busqueda.trim() === '') return;
+    navigate(`/locatarios?buscar=${encodeURIComponent(busqueda.trim())}`);
+  }
+
+  function cerrarSesion() {
+    localStorage.removeItem('usuario');
+    localStorage.removeItem('token');
+    navigate('/login');
+  }
 
   return (
     <nav className="navbar">
@@ -25,28 +106,80 @@ export default function Navbar({ usuarioNombre = 'Administrador' }) {
         </Link>
         <div className="nav-sep"></div>
         <div className="nav-top-spacer"></div>
-        <div className="nav-busqueda">
+
+        <form className="nav-busqueda" onSubmit={buscarLocatario}>
           <i className="fa-solid fa-magnifying-glass"></i>
-          <input type="text" placeholder="Buscar locatario..." />
+          <input
+            type="text"
+            placeholder="Buscar locatario..."
+            value={busqueda}
+            onChange={(e) => setBusqueda(e.target.value)}
+          />
+        </form>
+
+        <div className="nav-notif-wrap" ref={notifRef}>
+          <div
+            className="nav-notif"
+            title="Notificaciones"
+            onClick={() => setMostrarNotif(v => !v)}
+          >
+            <i className="fa-regular fa-bell"></i>
+            {notificaciones.length > 0 && <span className="notif-dot"></span>}
+          </div>
+
+          {mostrarNotif && (
+            <div className="notif-dropdown">
+              <div className="notif-dropdown-header">
+                Incidencias abiertas {notificaciones.length > 0 && `(${notificaciones.length})`}
+              </div>
+              {notificaciones.length === 0 ? (
+                <div className="notif-item-vacio">No tienes notificaciones</div>
+              ) : (
+                notificaciones.map((n, i) => (
+                  <div
+                    className="notif-item"
+                    key={n.id_incidencia || i}
+                    style={{ cursor: 'pointer' }}
+                    onClick={() => { setMostrarNotif(false); navigate('/incidencias'); }}
+                  >
+                    <p>{n.titulo}{n.nombre ? ` · ${n.nombre}` : ''}</p>
+                    {n.fecha && <span>{n.fecha}</span>}
+                  </div>
+                ))
+              )}
+            </div>
+          )}
         </div>
-        <div className="nav-notif" title="Notificaciones">
-          <i className="fa-regular fa-bell"></i>
-          <span className="notif-dot"></span>
-        </div>
-        <div className="nav-user">
-          <div className="nav-avatar"><i className="fa-solid fa-user"></i></div>
-          <span className="nav-user-name">{usuarioNombre}</span>
+
+        <div className="nav-user-wrap" ref={userRef}>
+          <div className="nav-user" onClick={() => setMostrarUser(v => !v)}>
+            <div className="nav-avatar"><i className="fa-solid fa-user"></i></div>
+            <span className="nav-user-name">{admin.nombre}</span>
+            <i className="fa-solid fa-chevron-down nav-user-caret"></i>
+          </div>
+
+          {mostrarUser && (
+            <div className="user-dropdown">
+              <div className="user-dropdown-nombre">{admin.nombre}</div>
+              {admin.correo && <div className="user-dropdown-correo">{admin.correo}</div>}
+              <button className="user-dropdown-cerrar" onClick={cerrarSesion}>
+                <i className="fa-solid fa-right-from-bracket"></i> Cerrar sesión
+              </button>
+            </div>
+          )}
         </div>
       </div>
+
       <div className="nav-bottom">
-        {LINKS.map((link) => (
+        {links.map(link => (
           <Link
             key={link.to}
             className={`nav-link ${location.pathname === link.to ? 'activo' : ''}`}
             to={link.to}
           >
-            <i className={`fa-solid ${link.icon}`}></i> {link.label}
-            {link.badge ? <span className="nav-badge">{link.badge}</span> : null}
+            <i className={`fa-solid ${link.icon}`}></i>
+            {link.label}
+            {link.badge && <span className="nav-badge">{link.badge}</span>}
           </Link>
         ))}
       </div>

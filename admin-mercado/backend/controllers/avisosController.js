@@ -1,4 +1,5 @@
 const db = require("../config/db");
+const { getIO } = require("../socket");
 
 // LISTAR AVISOS VIGENTES (no archivados)
 exports.listarAvisos = async (req, res) => {
@@ -14,17 +15,26 @@ exports.listarAvisos = async (req, res) => {
 exports.publicarAviso = async (req, res) => {
   try {
     const { id_administrador, titulo, contenido, fecha_vigencia } = req.body;
-
+ 
     if (!id_administrador || !titulo || !contenido || !fecha_vigencia) {
       return res.status(400).json({
         error: "Faltan datos: id_administrador, titulo, contenido y fecha_vigencia son obligatorios"
       });
     }
-
+ 
     await db.query(
       "CALL sp_publicar_aviso(?, ?, ?, ?)",
       [id_administrador, titulo, contenido, fecha_vigencia]
     );
+ 
+    // >>>  avisa a todos los clientes conectados (admin y locatarios) que hay un aviso nuevo
+    getIO().emit("nuevo_aviso", {
+      titulo,
+      contenido,
+      fecha_vigencia,
+      fecha_publicacion: new Date().toISOString(),
+    });
+ 
     res.json({ mensaje: "Aviso publicado correctamente" });
   } catch (error) {
     res.status(500).json({ error: error.message });

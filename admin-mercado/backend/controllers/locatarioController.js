@@ -1,4 +1,5 @@
 const db = require("../config/db");
+const { getIO } = require("../socket");
 
 // INFO BÁSICA DEL LOCATARIO LOGUEADO
 exports.miInfo = async (req, res) => {
@@ -81,12 +82,16 @@ exports.misIncidencias = async (req, res) => {
 exports.crearIncidencia = async (req, res) => {
   try {
     const { id_locatario, titulo, descripcion } = req.body;
-
+ 
     if (!id_locatario || !titulo || !descripcion) {
       return res.status(400).json({ error: "Faltan datos: titulo y descripcion son obligatorios" });
     }
-
+ 
     await db.query("CALL sp_abrir_incidencia(?, ?, ?)", [id_locatario, titulo, descripcion]);
+ 
+    // >>> avisa al admin que hay una incidencia nueva, en tiempo real
+    getIO().emit("nueva_incidencia", { id_locatario, titulo, descripcion, estado: "Abierta" });
+ 
     res.json({ mensaje: "Incidencia registrada correctamente" });
   } catch (error) {
     res.status(500).json({ error: error.message });

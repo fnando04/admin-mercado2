@@ -1,5 +1,7 @@
 import { useState, useEffect } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import PageLayout from './PageLayout';
+import socket from '../socket';
 import './Incidencias.css';
 
 const COLOR_ESTADO = {
@@ -46,6 +48,8 @@ function FilaIncidencia({ inc, onVerDetalle }) {
 }
 
 export default function Incidencias() {
+  const [searchParams, setSearchParams] = useSearchParams();
+
   const [incidencias, setIncidencias] = useState([]);
   const [avisos, setAvisos] = useState([]);
   const [locatarios, setLocatarios] = useState([]);
@@ -64,6 +68,29 @@ export default function Incidencias() {
   const [avisoEditando, setAvisoEditando] = useState(null); // id_aviso en edición
   const [formEdicion, setFormEdicion] = useState({ titulo: '', contenido: '', fecha_vigencia: '' });
 
+  // Tiempo real: refresca la tabla sola cuando llega una incidencia nueva o un aviso nuevo
+  useEffect(() => {
+    function onNuevaIncidencia() {
+      cargarIncidencias();
+    }
+    function onNuevoAviso() {
+      cargarAvisos();
+    }
+    function onIncidenciaRespondida() {
+      cargarIncidencias();
+    }
+
+    socket.on("nueva_incidencia", onNuevaIncidencia);
+    socket.on("nuevo_aviso", onNuevoAviso);
+    socket.on("incidencia_respondida", onIncidenciaRespondida);
+
+    return () => {
+      socket.off("nueva_incidencia", onNuevaIncidencia);
+      socket.off("nuevo_aviso", onNuevoAviso);
+      socket.off("incidencia_respondida", onIncidenciaRespondida);
+    };
+  }, []);
+
   useEffect(() => {
     // Archiva automáticamente los avisos ya vencidos, una sola vez al cargar la pantalla
     fetch("http://localhost:3000/api/avisos/archivar-vencidos", { method: "POST" })
@@ -72,6 +99,12 @@ export default function Incidencias() {
 
     cargarIncidencias();
     cargarLocatarios();
+
+    if (searchParams.get('nuevoAviso') === '1') {
+      setModalAviso(true);
+      setSearchParams({}, { replace: true });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   function cargarIncidencias() {

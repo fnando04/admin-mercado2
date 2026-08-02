@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import LocatarioLayout from './LocatarioLayout';
+import socket from '../socket'; // ajusta la ruta según dónde guardes tu socket.js del frontend
 import './LocatarioPanel.css';
 
 const BADGE_CLASE = {
@@ -22,6 +23,24 @@ export default function MisIncidencias() {
     setIdLocatario(usuario.id);
     cargarIncidencias(usuario.id);
   }, []);
+
+  // Tiempo real: cuando el admin responde o cierra una incidencia, se actualiza sola,
+  // sin que el locatario tenga que salir y volver a entrar a esta pantalla.
+  useEffect(() => {
+    if (!idLocatario) return;
+
+    function refrescar() {
+      cargarIncidencias(idLocatario);
+    }
+
+    socket.on("incidencia_respondida", refrescar);
+    socket.on("incidencia_cerrada", refrescar);
+
+    return () => {
+      socket.off("incidencia_respondida", refrescar);
+      socket.off("incidencia_cerrada", refrescar);
+    };
+  }, [idLocatario]);
 
   function cargarIncidencias(id) {
     fetch(`http://localhost:3000/api/locatario/mis-incidencias?id_locatario=${id}`)

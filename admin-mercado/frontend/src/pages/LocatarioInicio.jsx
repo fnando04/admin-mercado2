@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import LocatarioLayout from './LocatarioLayout';
+import socket from '../socket'; 
 import './LocatarioPanel.css';
 
 const NOMBRES_MES = [
@@ -22,12 +23,24 @@ export default function LocatarioInicio() {
     setIdLocatario(usuario.id);
 
     cargarInfo(usuario.id);
+    cargarAvisos();
+  }, []);
 
+  // Tiempo real: cuando el admin publica un aviso nuevo, aparece aquí solo, sin recargar
+  useEffect(() => {
+    function onNuevoAviso() {
+      cargarAvisos();
+    }
+    socket.on("nuevo_aviso", onNuevoAviso);
+    return () => socket.off("nuevo_aviso", onNuevoAviso);
+  }, []);
+
+  function cargarAvisos() {
     fetch("http://localhost:3000/api/avisos")
       .then(res => res.json())
       .then(data => setAvisos(Array.isArray(data) ? data.slice(0, 3) : []))
       .catch(err => console.error(err));
-  }, []);
+  }
 
   function cargarInfo(id) {
     fetch(`http://localhost:3000/api/locatario/mi-info?id_locatario=${id}`)
@@ -211,3 +224,4 @@ export default function LocatarioInicio() {
     </LocatarioLayout>
   );
 }
+
