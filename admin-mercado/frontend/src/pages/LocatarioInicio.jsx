@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import LocatarioLayout from './LocatarioLayout';
 import socket from '../socket'; 
 import './LocatarioPanel.css';
+import MapaMercado from './MapaMercado';
 
 const NOMBRES_MES = [
   "", "Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio",
@@ -15,6 +16,7 @@ export default function LocatarioInicio() {
 
   const [editando, setEditando] = useState(false);
   const [form, setForm] = useState({ giro_comercial: '', telefono: '', correo: '' });
+  const [mostrarMapa, setMostrarMapa] = useState(false);
 
   useEffect(() => {
     const guardado = localStorage.getItem('usuario');
@@ -152,6 +154,96 @@ export default function LocatarioInicio() {
           </button>
         </div>
       )}
+
+      <button
+  className="panel"
+  onClick={() => setMostrarMapa(true)}
+  style={{
+    marginBottom: '20px',
+    width: '100%',
+    display: 'flex',
+    alignItems: 'center',
+    gap: '14px',
+    padding: '18px 20px',
+    cursor: 'pointer',
+    border: 'none',
+    textAlign: 'left',
+    background: 'var(--blanco, #fff)',
+    borderRadius: '12px',
+  }}
+>
+  <div
+    style={{
+      width: '44px',
+      height: '44px',
+      borderRadius: '10px',
+      flexShrink: 0,
+      background: '#E8F0E4',
+      color: '#1E5B2E',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      fontSize: '18px',
+    }}
+  >
+    <i className="fa-solid fa-map-location-dot"></i>
+  </div>
+
+  <div>
+    <div
+      style={{
+        fontSize: '14px',
+        fontWeight: 600,
+        color: '#222'
+      }}
+    >
+      Ubicación del mercado
+    </div>
+
+    <div
+      style={{
+        fontSize: '12px',
+        color: '#888'
+      }}
+    >
+      Toca para ver el mapa
+    </div>
+  </div>
+
+  <i
+    className="fa-solid fa-chevron-right"
+    style={{
+      marginLeft: 'auto',
+      color: '#bbb'
+    }}
+  ></i>
+</button>
+
+{mostrarMapa && (
+  <div
+    className="modal-detalle"
+    onClick={() => setMostrarMapa(false)}
+  >
+    <div
+      className="modal-contenido"
+      style={{
+        width: '600px',
+        maxWidth: '92%'
+      }}
+      onClick={(e) => e.stopPropagation()}
+    >
+      <h2>Ubicación del mercado</h2>
+
+      <MapaMercado height="320px" />
+
+      <div style={{ marginTop: '10px' }}>
+        <button onClick={() => setMostrarMapa(false)}>
+          Cerrar
+        </button>
+      </div>
+    </div>
+  </div>
+)}
 
       {info && editando && (
         <div className="tabla-wrap" style={{ padding: '20px 24px', marginBottom: '24px' }}>
