@@ -56,6 +56,10 @@ app.use("/api/administradores", administradoresRoutes);
 
 const locatarioRoutes = require("./routes/locatario");
 app.use("/api/locatario", locatarioRoutes);
+
+const dashboardRoutes = require("./routes/dashboard");
+app.use("/api/dashboard", dashboardRoutes);
+
 //--------------------
 
 const server = http.createServer(app);

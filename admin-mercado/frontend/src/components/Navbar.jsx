@@ -62,12 +62,9 @@ export default function Navbar() {
 
   function cargarNotificaciones() {
     fetch("http://localhost:3000/api/incidencias/abiertas")
-      .then((res) => res.json())
-      .then((data) => {
-        console.log("📋 Incidencias abiertas:", data);
-        setNotificaciones(Array.isArray(data) ? data : []);
-      })
-      .catch((err) => console.error(err));
+      .then(res => res.json())
+      .then(data => setNotificaciones(Array.isArray(data) ? data : []))
+      .catch(err => console.error(err));
   }
 
   // Cerrar dropdowns al hacer clic fuera
