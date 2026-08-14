@@ -1,6 +1,7 @@
 const express = require("express");
 const cors = require("cors");
 const db = require("./config/db");
+require("dotenv").config();
 
 const app = express();
 
@@ -59,6 +60,9 @@ app.use("/api/locatario", locatarioRoutes);
 
 const dashboardRoutes = require("./routes/dashboard");
 app.use("/api/dashboard", dashboardRoutes);
+
+const whatsappRoutes = require("./routes/whatsapp"); 
+app.use("/api/pagos", whatsappRoutes);
 
 //--------------------
 
