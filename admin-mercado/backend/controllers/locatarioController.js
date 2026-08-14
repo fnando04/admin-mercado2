@@ -81,16 +81,19 @@ exports.misIncidencias = async (req, res) => {
 // EL LOCATARIO REPORTA UNA NUEVA INCIDENCIA
 exports.crearIncidencia = async (req, res) => {
   try {
-    const { id_locatario, titulo, descripcion } = req.body;
+    const { id_locatario, titulo, descripcion, foto_url } = req.body;
  
     if (!id_locatario || !titulo || !descripcion) {
       return res.status(400).json({ error: "Faltan datos: titulo y descripcion son obligatorios" });
     }
  
-    await db.query("CALL sp_abrir_incidencia(?, ?, ?)", [id_locatario, titulo, descripcion]);
+    await db.query(
+      "CALL sp_abrir_incidencia(?, ?, ?, ?)",
+      [id_locatario, titulo, descripcion, foto_url || null]
+    );
  
-    // >>> avisa al admin que hay una incidencia nueva, en tiempo real
-    getIO().emit("nueva_incidencia", { id_locatario, titulo, descripcion, estado: "Abierta" });
+    // Si ya tienes el emit de socket.io de antes, consérvalo aquí también:
+    // getIO().emit("nueva_incidencia", { id_locatario, titulo, descripcion, estado: "Abierta" });
  
     res.json({ mensaje: "Incidencia registrada correctamente" });
   } catch (error) {

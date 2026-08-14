@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import PageLayout from './PageLayout';
-import socket from '../socket';
+import socket from '../socket'; // ajusta la ruta según dónde guardes frontend_socket.js
 import './Incidencias.css';
 
 const COLOR_ESTADO = {
@@ -464,6 +464,16 @@ export default function Incidencias() {
             <p><b>Puesto:</b> {detalle.numero_puesto || '—'}</p>
             <p><b>Estado:</b> {detalle.estado}</p>
             <p><b>Descripción:</b> {detalle.descripcion}</p>
+            {detalle.foto_url && (
+              <div style={{ marginBottom: '10px' }}>
+                <b>Evidencia:</b>
+                <img
+                  src={detalle.foto_url}
+                  alt="Evidencia de la incidencia"
+                  style={{ maxWidth: '100%', borderRadius: '8px', marginTop: '6px', display: 'block' }}
+                />
+              </div>
+            )}
             {detalle.fecha_respuesta && <p><b>Respondida:</b> {detalle.fecha_respuesta}</p>}
 
             <label>Respuesta del administrador</label>

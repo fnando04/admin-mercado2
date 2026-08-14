@@ -40,15 +40,13 @@ exports.abrirIncidencia = async (req, res) => {
       return res.status(400).json({ error: "Faltan datos: id_locatario, titulo y descripcion son obligatorios" });
     }
  
-    await db.query("CALL sp_abrir_incidencia(?, ?, ?)", [id_locatario, titulo, descripcion]);
+    await db.query(
+      "CALL sp_abrir_incidencia(?, ?, ?, ?)",
+      [id_locatario, titulo, descripcion, null]
+    );
  
-    // >>> avisa al admin (y a quien esté escuchando) que hay una incidencia nueva
-    getIO().emit("nueva_incidencia", {
-      id_locatario,
-      titulo,
-      descripcion,
-      estado: "Abierta",
-    });
+    // Si ya tienes el emit de socket.io de antes, consérvalo aquí también:
+    // getIO().emit("nueva_incidencia", { id_locatario, titulo, descripcion, estado: "Abierta" });
  
     res.json({ mensaje: "Incidencia registrada correctamente" });
   } catch (error) {

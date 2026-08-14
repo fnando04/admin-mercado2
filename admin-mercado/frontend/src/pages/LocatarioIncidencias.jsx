@@ -53,19 +53,46 @@ export default function MisIncidencias() {
   const enProceso = incidencias.filter(i => i.estado === 'En proceso').length;
   const resueltas = incidencias.filter(i => i.estado === 'Resuelta').length;
 
+  const [foto, setFoto] = useState(null);
+  const [subiendoFoto, setSubiendoFoto] = useState(false);
+
+  // Sube la foto DIRECTO a Cloudinary desde el navegador (sin pasar por tu backend)
+  async function subirFotoACloudinary(archivo) {
+    const formData = new FormData();
+    formData.append("file", archivo);
+    formData.append("upload_preset", "incidencias_mercado"); // el que creaste en Cloudinary (unsigned)
+
+    const res = await fetch(
+      "https://api.cloudinary.com/v1_1/qicjakz1/image/upload", // reemplaza TU_CLOUD_NAME
+      { method: "POST", body: formData }
+    );
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error?.message || "Error al subir la foto");
+    return data.secure_url;
+  }
+
   async function crearIncidencia() {
     if (!nueva.titulo.trim() || !nueva.descripcion.trim()) {
       alert("Completa el título y la descripción");
       return;
     }
     try {
+      let foto_url = null;
+
+      if (foto) {
+        setSubiendoFoto(true);
+        foto_url = await subirFotoACloudinary(foto);
+        setSubiendoFoto(false);
+      }
+
       const res = await fetch("http://localhost:3000/api/locatario/incidencias", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           id_locatario: idLocatario,
           titulo: nueva.titulo,
-          descripcion: nueva.descripcion
+          descripcion: nueva.descripcion,
+          foto_url
         })
       });
       const data = await res.json();
@@ -76,8 +103,10 @@ export default function MisIncidencias() {
       alert(data.mensaje || "Incidencia registrada");
       setModalNueva(false);
       setNueva({ titulo: '', descripcion: '' });
+      setFoto(null);
       cargarIncidencias(idLocatario);
     } catch (err) {
+      setSubiendoFoto(false);
       console.error(err);
       alert("Error de conexión al registrar la incidencia");
     }
@@ -136,6 +165,15 @@ export default function MisIncidencias() {
               <span className={`badge ${BADGE_CLASE[inc.estado] || 'badge-dark'}`}>{inc.estado}</span>
             </div>
             <p>{inc.descripcion}</p>
+
+            {inc.foto_url && (
+              <img
+                src={inc.foto_url}
+                alt="Evidencia"
+                style={{ maxWidth: '220px', borderRadius: '8px', marginTop: '8px', marginBottom: '8px', display: 'block' }}
+              />
+            )}
+
             <span className="fecha">Reportada: {inc.fecha_creacion}</span>
 
             {inc.respuesta_admin && (
@@ -170,8 +208,18 @@ export default function MisIncidencias() {
               placeholder="Describe el problema con detalle..."
             />
 
+            <label>Foto de evidencia (opcional)</label>
+            <input
+              type="file"
+              accept="image/*"
+              onChange={(e) => setFoto(e.target.files[0] || null)}
+            />
+            {foto && <p style={{ fontSize: '12px', color: '#666', marginTop: '4px' }}>{foto.name}</p>}
+
             <div style={{ marginTop: '10px' }}>
-              <button onClick={crearIncidencia}>Enviar reporte</button>
+              <button onClick={crearIncidencia} disabled={subiendoFoto}>
+                {subiendoFoto ? "Subiendo foto..." : "Enviar reporte"}
+              </button>
               <button onClick={() => setModalNueva(false)}>Cancelar</button>
             </div>
           </div>
