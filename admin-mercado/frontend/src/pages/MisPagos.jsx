@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import LocatarioLayout from './LocatarioLayout';
+import { API_URL } from '../config';
 import './LocatarioPanel.css';
-
 const NOMBRES_MES = [
   "", "Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio",
   "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"
