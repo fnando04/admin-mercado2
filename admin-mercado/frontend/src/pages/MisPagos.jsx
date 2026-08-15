@@ -30,7 +30,7 @@ export default function MisPagos() {
   }, []);
 
   function cargarPagos(id) {
-    fetch(`http://localhost:3000/api/locatario/mis-pagos?id_locatario=${id}`)
+    fetch(`${API_URL}/api/locatario/mis-pagos?id_locatario=${id}`)
       .then(res => res.json())
       .then(data => setPagos(Array.isArray(data) ? data : []))
       .catch(err => console.error(err));
@@ -60,7 +60,7 @@ export default function MisPagos() {
   async function confirmarPago() {
     if (!filaSeleccionada || !idLocatario) return;
     try {
-      const res = await fetch("http://localhost:3000/api/locatario/pagar", {
+      const res = await fetch(API_URL + "/api/locatario/pagar", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({

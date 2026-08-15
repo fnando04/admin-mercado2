@@ -2,6 +2,8 @@ import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useState, useEffect, useRef } from 'react';
 import socket from '../socket'; 
 import './LocatarioNavbar.css';
+import { API_URL } from "../config";
+
 
 export default function LocatarioNavbar() {
   const location = useLocation();
@@ -39,7 +41,7 @@ export default function LocatarioNavbar() {
     const u = guardado ? JSON.parse(guardado) : null;
     if (!u) return;
 
-    fetch(`http://localhost:3000/api/locatario/mis-incidencias?id_locatario=${u.id}`)
+    fetch(`${API_URL}/api/locatario/mis-incidencias?id_locatario=${u.id}`)
       .then(res => res.json())
       .then(data => {
         const ids = new Set((Array.isArray(data) ? data : []).map(i => i.id_incidencia));

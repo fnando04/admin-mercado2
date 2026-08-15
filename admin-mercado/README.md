@@ -75,7 +75,7 @@ npm install
 npm run dev
 ```
 
-Por defecto corre en `http://localhost:3000`.
+Por defecto corre en `${API_URL}`.
 
 ### Endpoints principales
 

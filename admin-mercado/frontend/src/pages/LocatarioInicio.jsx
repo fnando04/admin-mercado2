@@ -3,6 +3,7 @@ import LocatarioLayout from './LocatarioLayout';
 import socket from '../socket'; 
 import './LocatarioPanel.css';
 import MapaMercado from './MapaMercado';
+import { API_URL } from "../config";
 
 const NOMBRES_MES = [
   "", "Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio",
@@ -38,14 +39,14 @@ export default function LocatarioInicio() {
   }, []);
 
   function cargarAvisos() {
-    fetch("http://localhost:3000/api/avisos")
+    fetch(API_URL + "/api/avisos")
       .then(res => res.json())
       .then(data => setAvisos(Array.isArray(data) ? data.slice(0, 3) : []))
       .catch(err => console.error(err));
   }
 
   function cargarInfo(id) {
-    fetch(`http://localhost:3000/api/locatario/mi-info?id_locatario=${id}`)
+    fetch(`${API_URL}/api/locatario/mi-info?id_locatario=${id}`)
       .then(res => res.json())
       .then(data => {
         if (data && !data.error) setInfo(data);
@@ -78,7 +79,7 @@ export default function LocatarioInicio() {
       return;
     }
     try {
-      const res = await fetch("http://localhost:3000/api/locatario/mi-perfil", {
+      const res = await fetch(API_URL + "/api/locatario/mi-perfil", {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({

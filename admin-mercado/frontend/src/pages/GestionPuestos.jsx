@@ -1,5 +1,7 @@
 import { useEffect, useState } from "react";
 import './GestionPuestos.css';
+import { API_URL } from "../config";
+
 
 export default function GestionPuestos() {
   const [puestosData, setPuestosData] = useState([]);
@@ -28,7 +30,7 @@ export default function GestionPuestos() {
 
     try {
 
-      const respuesta = await fetch("http://localhost:3000/api/puestos");
+      const respuesta = await fetch(API_URL + "/api/puestos");
 
       const datos = await respuesta.json();
 
@@ -59,7 +61,7 @@ export default function GestionPuestos() {
     try {
 
       const respuesta = await fetch(
-        `http://localhost:3000/api/puestos/liberar/${sel.id_puesto}`,
+        `${API_URL}/api/puestos/liberar/${sel.id_puesto}`,
         {
           method: "PUT"
         }
@@ -86,7 +88,7 @@ export default function GestionPuestos() {
     try {
 
       const respuesta = await fetch(
-        "http://localhost:3000/api/puestos/locatarios-disponibles"
+        API_URL + "/api/puestos/locatarios-disponibles"
       );
 
       const datos = await respuesta.json();
@@ -108,7 +110,7 @@ export default function GestionPuestos() {
     try {
 
       const respuesta = await fetch(
-        "http://localhost:3000/api/puestos/asignar",
+        API_URL + "/api/puestos/asignar",
         {
 
           method: "PUT",

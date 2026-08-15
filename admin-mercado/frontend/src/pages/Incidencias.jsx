@@ -3,6 +3,8 @@ import { useSearchParams } from 'react-router-dom';
 import PageLayout from './PageLayout';
 import socket from '../socket'; // ajusta la ruta según dónde guardes frontend_socket.js
 import './Incidencias.css';
+import { API_URL } from "../config";
+
 
 const COLOR_ESTADO = {
   'Abierta': '#C83030',
@@ -93,7 +95,7 @@ export default function Incidencias() {
 
   useEffect(() => {
     // Archiva automáticamente los avisos ya vencidos, una sola vez al cargar la pantalla
-    fetch("http://localhost:3000/api/avisos/archivar-vencidos", { method: "POST" })
+    fetch(API_URL + "/api/avisos/archivar-vencidos", { method: "POST" })
       .catch(err => console.error(err))
       .finally(() => cargarAvisos());
 
@@ -108,21 +110,21 @@ export default function Incidencias() {
   }, []);
 
   function cargarIncidencias() {
-    fetch("http://localhost:3000/api/incidencias")
+    fetch(API_URL + "/api/incidencias")
       .then(res => res.json())
       .then(data => setIncidencias(Array.isArray(data) ? data : []))
       .catch(err => console.error(err));
   }
 
   function cargarAvisos() {
-    fetch("http://localhost:3000/api/avisos")
+    fetch(API_URL + "/api/avisos")
       .then(res => res.json())
       .then(data => setAvisos(Array.isArray(data) ? data : []))
       .catch(err => console.error(err));
   }
 
   function cargarLocatarios() {
-    fetch("http://localhost:3000/api/incidencias/locatarios-disponibles")
+    fetch(API_URL + "/api/incidencias/locatarios-disponibles")
       .then(res => res.json())
       .then(data => setLocatarios(Array.isArray(data) ? data : []))
       .catch(err => console.error(err));
@@ -142,7 +144,7 @@ export default function Incidencias() {
       return;
     }
     try {
-      const res = await fetch("http://localhost:3000/api/incidencias/responder", {
+      const res = await fetch(API_URL + "/api/incidencias/responder", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ id_incidencia: detalle.id_incidencia, respuesta: respuestaTexto })
@@ -164,7 +166,7 @@ export default function Incidencias() {
   async function cerrarIncidencia() {
     if (!detalle) return;
     try {
-      const res = await fetch("http://localhost:3000/api/incidencias/cerrar", {
+      const res = await fetch(API_URL + "/api/incidencias/cerrar", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ id_incidencia: detalle.id_incidencia })
@@ -190,7 +192,7 @@ export default function Incidencias() {
       return;
     }
     try {
-      const res = await fetch("http://localhost:3000/api/incidencias", {
+      const res = await fetch(API_URL + "/api/incidencias", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ id_locatario, titulo, descripcion })
@@ -238,7 +240,7 @@ export default function Incidencias() {
       return;
     }
     try {
-      const res = await fetch(`http://localhost:3000/api/avisos/${id_aviso}`, {
+      const res = await fetch(`${API_URL}/api/avisos/${id_aviso}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ titulo, contenido, fecha_vigencia })
@@ -259,7 +261,7 @@ export default function Incidencias() {
   async function eliminarAviso(id_aviso) {
     if (!window.confirm("¿Eliminar este aviso?")) return;
     try {
-      const res = await fetch(`http://localhost:3000/api/avisos/${id_aviso}`, { method: "DELETE" });
+      const res = await fetch(`${API_URL}/api/avisos/${id_aviso}`, { method: "DELETE" });
       const data = await res.json();
       if (!res.ok) {
         alert(data.error || "No se pudo eliminar el aviso");
@@ -288,7 +290,7 @@ export default function Incidencias() {
     }
 
     try {
-      const res = await fetch("http://localhost:3000/api/avisos", {
+      const res = await fetch(API_URL + "/api/avisos", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ id_administrador: admin.id, titulo, contenido, fecha_vigencia })

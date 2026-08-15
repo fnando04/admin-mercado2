@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import PageLayout from './PageLayout';
 import MapaMercado from './MapaMercado';
 import './Dashboard.css';
+import { API_URL } from "../config";
 
 const BADGE_PAGO = {
   pagado: { clase: 'badge-pagado-sm', label: 'Pagado' },
@@ -48,35 +49,35 @@ export default function Dashboard() {
   }, []);
 
   function cargarKpis() {
-    fetch("http://localhost:3000/api/dashboard/kpis")
+    fetch(API_URL + "/api/dashboard/kpis")
       .then(res => res.json())
       .then(data => setKpis(data))
       .catch(err => console.error(err));
   }
 
   function cargarOcupacionGiro() {
-    fetch("http://localhost:3000/api/dashboard/ocupacion-giro")
+    fetch(API_URL + "/api/dashboard/ocupacion-giro")
       .then(res => res.json())
       .then(data => setGiros(Array.isArray(data) ? data : []))
       .catch(err => console.error(err));
   }
 
   function cargarIncidenciasActivas() {
-    fetch("http://localhost:3000/api/dashboard/incidencias-activas?limite=3")
+    fetch(API_URL + "/api/dashboard/incidencias-activas?limite=3")
       .then(res => res.json())
       .then(data => setIncidencias(Array.isArray(data) ? data : []))
       .catch(err => console.error(err));
   }
 
   function cargarPagosRecientes() {
-    fetch("http://localhost:3000/api/dashboard/pagos-recientes?limite=4")
+    fetch(API_URL + "/api/dashboard/pagos-recientes?limite=4")
       .then(res => res.json())
       .then(data => setPagos(Array.isArray(data) ? data : []))
       .catch(err => console.error(err));
   }
 
   function cargarAvisosVigentes() {
-    fetch("http://localhost:3000/api/dashboard/avisos-vigentes?limite=3")
+    fetch(API_URL + "/api/dashboard/avisos-vigentes?limite=3")
       .then(res => res.json())
       .then(data => setAvisos(Array.isArray(data) ? data : []))
       .catch(err => console.error(err));

@@ -67,7 +67,7 @@ useEffect(() => {
   }, []);
 
   function cargarNotificaciones() {
-    fetch("http://localhost:3000/api/incidencias/abiertas")
+    fetch(API_URL + "/api/incidencias/abiertas")
       .then(res => res.json())
       .then(data => setNotificaciones(Array.isArray(data) ? data : []))
       .catch(err => console.error(err));

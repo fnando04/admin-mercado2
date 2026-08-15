@@ -1,6 +1,8 @@
 import { useState, useEffect } from 'react';
 import PageLayout from './PageLayout';
 import './GestionAdmin.css';
+import { API_URL } from "../config";
+
 
 export default function Administradores() {
   const [administradores, setAdministradores] = useState([]);
@@ -12,7 +14,7 @@ export default function Administradores() {
   }, []);
 
   function cargarAdministradores() {
-    fetch("http://localhost:3000/api/administradores")
+    fetch(API_URL + "/api/administradores")
       .then(res => res.json())
       .then(data => setAdministradores(Array.isArray(data) ? data : []))
       .catch(err => console.error(err));
@@ -32,7 +34,7 @@ export default function Administradores() {
       return;
     }
     try {
-      const res = await fetch("http://localhost:3000/api/administradores", {
+      const res = await fetch(API_URL + "/api/administradores", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ nombre, correo, password, telefono })
@@ -59,7 +61,7 @@ export default function Administradores() {
     if (!window.confirm(`¿Seguro que quieres ${accion} a ${admin.nombre}?`)) return;
 
     try {
-      const res = await fetch(`http://localhost:3000/api/administradores/${admin.id_usuario}/estado`, {
+      const res = await fetch(`${API_URL}/api/administradores/${admin.id_usuario}/estado`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ activo: nuevoEstado })

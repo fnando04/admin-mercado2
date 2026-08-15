@@ -2,6 +2,7 @@ import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useState, useEffect, useRef } from 'react';
 import socket from "../socket";
 import './Navbar.css';
+import { API_URL } from "../config";
 
 export default function Navbar() {
   const location = useLocation();
@@ -61,7 +62,7 @@ export default function Navbar() {
   }, []);
 
   function cargarNotificaciones() {
-    fetch("http://localhost:3000/api/incidencias/abiertas")
+    fetch(API_URL + "/api/incidencias/abiertas")
       .then(res => res.json())
       .then(data => setNotificaciones(Array.isArray(data) ? data : []))
       .catch(err => console.error(err));

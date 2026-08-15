@@ -1,6 +1,8 @@
 import { useState, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import './GestionPagos.css';
+import { API_URL } from "../config";
+
 
 const NOMBRES_MES = [
   "", "Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio",
@@ -67,7 +69,7 @@ export default function GestionPagos() {
   };
 
   useEffect(() => {
-    fetch("http://localhost:3000/api/pagos/actualizar-vencidos", { method: "POST" })
+    fetch(API_URL + "/api/pagos/actualizar-vencidos", { method: "POST" })
       .catch(err => console.error(err));
 
     if (searchParams.get('todos')) {
@@ -82,8 +84,8 @@ export default function GestionPagos() {
 
   function cargarPagos(periodo = mesSeleccionado) {
     const url = periodo.todos
-      ? "http://localhost:3000/api/pagos/puestos?todos=1"
-      : `http://localhost:3000/api/pagos/puestos?mes=${periodo.mes}&anio=${periodo.anio}`;
+      ? API_URL + "/api/pagos/puestos?todos=1"
+      : `${API_URL}/api/pagos/puestos?mes=${periodo.mes}&anio=${periodo.anio}`;
 
     fetch(url)
       .then(res => res.json())
@@ -97,7 +99,7 @@ export default function GestionPagos() {
       return;
     }
     try {
-      const res = await fetch("http://localhost:3000/api/pagos/generar-mes", {
+      const res = await fetch(API_URL + "/api/pagos/generar-mes", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ mes: mesSeleccionado.mes, anio: mesSeleccionado.anio })
@@ -128,7 +130,7 @@ export default function GestionPagos() {
     if (!filaNotificar) return;
     setEnviandoNotificacion(true);
     try {
-      const res = await fetch(`http://localhost:3000/api/pagos/enviar-recordatorio/${filaNotificar.id_pago}`, {
+      const res = await fetch(`${API_URL}/api/pagos/enviar-recordatorio/${filaNotificar.id_pago}`, {
         method: "POST",
       });
       const data = await res.json();
@@ -161,7 +163,7 @@ export default function GestionPagos() {
     if (!filaSeleccionada) return;
 
     try {
-      const res = await fetch("http://localhost:3000/api/pagos", {
+      const res = await fetch(API_URL + "/api/pagos", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({

@@ -2,6 +2,8 @@ import { useState, useEffect } from 'react';
 import LocatarioLayout from './LocatarioLayout';
 import socket from '../socket'; // ajusta la ruta según dónde guardes tu socket.js del frontend
 import './LocatarioPanel.css';
+import { API_URL } from "../config";
+
 
 const BADGE_CLASE = {
   'Abierta': 'badge-dark',
@@ -43,7 +45,7 @@ export default function MisIncidencias() {
   }, [idLocatario]);
 
   function cargarIncidencias(id) {
-    fetch(`http://localhost:3000/api/locatario/mis-incidencias?id_locatario=${id}`)
+    fetch(`${API_URL}/api/locatario/mis-incidencias?id_locatario=${id}`)
       .then(res => res.json())
       .then(data => setIncidencias(Array.isArray(data) ? data : []))
       .catch(err => console.error(err));
@@ -85,7 +87,7 @@ export default function MisIncidencias() {
         setSubiendoFoto(false);
       }
 
-      const res = await fetch("http://localhost:3000/api/locatario/incidencias", {
+      const res = await fetch(API_URL + "/api/locatario/incidencias", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
