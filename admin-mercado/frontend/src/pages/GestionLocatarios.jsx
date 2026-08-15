@@ -1,6 +1,7 @@
 import { useMemo, useState, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import PageLayout from './PageLayout';
+import { API_URL } from '../config';
 import './GestionLocatarios.css';
 
 const BADGE_CLASE = {
@@ -70,7 +71,7 @@ export default function GestionLocatarios() {
   }, [locatarios]);
 
   function cargarLocatarios() {
-    fetch("http://localhost:3000/api/usuarios")
+    fetch(`${API_URL}/api/usuarios`)
       .then(res => res.json())
       .then(data => setLocatarios(Array.isArray(data) ? data : []))
       .catch(err => console.error(err));
@@ -105,7 +106,7 @@ export default function GestionLocatarios() {
       return;
     }
     try {
-      const res = await fetch("http://localhost:3000/api/usuarios", {
+      const res = await fetch(`${API_URL}/api/usuarios`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ nombre, correo, password, telefono, giro_comercial })
@@ -137,7 +138,7 @@ export default function GestionLocatarios() {
       return;
     }
     try {
-      const res = await fetch(`http://localhost:3000/api/usuarios/${editando.id_usuario}`, {
+      const res = await fetch(`${API_URL}/api/usuarios/${editando.id_usuario}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ telefono, correo, giro_comercial })
@@ -158,7 +159,7 @@ export default function GestionLocatarios() {
   async function suspender(l) {
     if (!window.confirm(`¿Suspender a ${l.nombre}? Perderá acceso y se liberará su puesto.`)) return;
     try {
-      const res = await fetch(`http://localhost:3000/api/usuarios/${l.id_usuario}/suspender`, { method: "PATCH" });
+      const res = await fetch(`${API_URL}/api/usuarios/${l.id_usuario}/suspender`, { method: "PATCH" });
       const data = await res.json();
       if (!res.ok) {
         alert(data.error || "No se pudo suspender al locatario");
@@ -174,7 +175,7 @@ export default function GestionLocatarios() {
   async function reactivar(l) {
     if (!window.confirm(`¿Reactivar a ${l.nombre}? Podrá volver a iniciar sesión.`)) return;
     try {
-      const res = await fetch(`http://localhost:3000/api/usuarios/${l.id_usuario}/reactivar`, { method: "PATCH" });
+      const res = await fetch(`${API_URL}/api/usuarios/${l.id_usuario}/reactivar`, { method: "PATCH" });
       const data = await res.json();
       if (!res.ok) {
         alert(data.error || "No se pudo reactivar al locatario");
