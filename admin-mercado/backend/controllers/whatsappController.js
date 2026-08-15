@@ -36,12 +36,30 @@ exports.enviarRecordatorioIndividual = async (req, res) => {
     }
 
     const esVencido = pago.estado_pago === "vencido";
-    const mensaje = `Hola ${pago.nombre}, te recordamos que el pago de tu puesto ${pago.numero_puesto || ""} correspondiente a ${NOMBRES_MES[pago.mes_pagado]} ${pago.anio_pagado} ($${pago.monto}) ${esVencido ? "ya venció el" : "vence el"} ${pago.fecha_limite}. ${esVencido ? "Te pedimos regularizar tu pago lo antes posible" : "Evita recargos pagando a tiempo"}. — Mercado Municipal`;
+    const variables = JSON.stringify({
+      1: pago.nombre,
+      2: pago.numero_puesto || "",
+      3: `${NOMBRES_MES[pago.mes_pagado]} ${pago.anio_pagado}`,
+      4: `$${Number(pago.monto).toFixed(2)}`,
+      5: pago.fecha_limite
+    });
 
-    await client.messages.create({
+    // TEMPORAL: comprobar que Twilio está recibiendo la plantilla
+    console.log(
+      "CONTENT SID:",
+      process.env.TWILIO_TEMPLATE_PAGO_POR_VENCER
+    );
+
+    console.log(
+      "VARIABLES:",
+      variables
+    );
+
+    const mensaje = await client.messages.create({
       from: `whatsapp:${process.env.TWILIO_WHATSAPP_FROM}`,
       to: `whatsapp:${formatearTelefono(pago.telefono)}`,
-      body: mensaje,
+      contentSid: process.env.TWILIO_TEMPLATE_PAGO_POR_VENCER,
+      contentVariables: variables
     });
 
     await db.query("CALL sp_marcar_recordatorio_enviado(?)", [id_pago]);

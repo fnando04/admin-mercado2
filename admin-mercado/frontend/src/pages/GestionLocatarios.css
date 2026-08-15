@@ -197,3 +197,45 @@ td { padding: 13px 20px; vertical-align: middle; }
   font-family: 'DM Sans', sans-serif; transition: background .15s;
 }
 .btnRegistrar:hover { background: var(--verde-800); }
+
+
+/* ── FILTROS DE ESTADO ACTIVOS ───────────────────── */
+
+.btnTodos {
+  background: var(--blanco);
+  color: var(--gris-600);
+  border-color: var(--gris-300);
+}
+
+.btnTodos:hover {
+  background: var(--gris-100);
+  border-color: var(--gris-400);
+}
+
+/* Ver todos activo */
+.btnTodos.filtro-activo {
+  background: var(--gris-800);
+  color: #050505;
+  border-color: var(--gris-800);
+}
+
+/* Morosos activo */
+.btnOutline.moroso-activo {
+  background: var(--ambar-bg);
+  color: var(--ambar-text);
+  border-color: #D6B32C;
+  font-weight: 600;
+}
+
+/* Suspendidos activo */
+.btnDanger.suspendido-activo {
+  background: var(--rojo-bg);
+  color: var(--rojo-text);
+  border-color: var(--rojo-borde);
+  font-weight: 600;
+}
+
+/* Efecto común para botón seleccionado */
+.filtro-activo {
+  box-shadow: 0 0 0 2px rgba(0, 0, 0, .04);
+}
