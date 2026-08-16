@@ -348,3 +348,119 @@
     box-shadow: 0 4px 12px rgba(0,0,0,.15);
     border: 2px solid #1976d2;
 }
+
+/* =========================
+   BOTÓN AGREGAR PUESTO
+   ========================= */
+
+.btn-agregar-puesto {
+  border: none;
+  background: #213d0d;
+  color: white;
+  padding: 9px 15px;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  margin-left: auto;
+  transition: 0.2s;
+}
+
+/* =========================
+   MODAL
+   ========================= */
+
+.modal-fondo {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.45);
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  z-index: 1000;
+}
+
+.modal-asignar {
+  width: 400px;
+  max-width: 90%;
+
+  background: white;
+  border-radius: 14px;
+  padding: 25px;
+
+  box-shadow: 0 15px 40px rgba(0, 0, 0, 0.2);
+
+  animation: aparecerModal 0.2s ease;
+}
+
+.modal-asignar h2 {
+  margin: 0 0 8px;
+  font-size: 21px;
+  color: #2c371f;
+}
+
+.modal-asignar p {
+  margin: 0 0 18px;
+  color: #6b806c;
+  font-size: 14px;
+}
+
+
+/* =========================
+   INPUT DEL NUEVO PUESTO
+   ========================= */
+
+.modal-asignar input {
+  width: 100%;
+  box-sizing: border-box;
+
+  padding: 11px 13px;
+
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+
+  font-size: 15px;
+  outline: none;
+
+  margin-bottom: 15px;
+}
+
+.modal-asignar input:focus {
+  border-color: #1f2711;
+  box-shadow: 0 0 0 2px rgba(17, 24, 39, 0.08);
+}
+
+
+/* =========================
+   BOTONES DEL MODAL
+   ========================= */
+
+.modal-asignar > button {
+  width: 100%;
+  border: none;
+
+  padding: 11px;
+  border-radius: 8px;
+
+  font-size: 14px;
+  font-weight: 600;
+
+  cursor: pointer;
+  margin-top: 8px;
+}
+
+.modal-asignar > button:not(.cerrar-modal) {
+  background: #193513;
+  color: white;
+}
+
+.modal-asignar .cerrar-modal {
+  background: #f3f4f6;
+  color: #3f5137;
+}
+

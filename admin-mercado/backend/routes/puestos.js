@@ -14,6 +14,8 @@ router.put(
     controller.asignarPuesto
 );
 
+router.post("/agregar", controller.agregarPuesto);
+
 module.exports = router;
 
 

@@ -99,3 +99,33 @@ exports.asignarPuesto = async (req, res) => {
     }
 
 };
+
+exports.agregarPuesto = async (req, res) => {
+
+    const { numero_puesto } = req.body;
+
+    if (!numero_puesto || !numero_puesto.trim()) {
+        return res.status(400).json({
+            error: "Debes indicar el número del puesto"
+        });
+    }
+
+    try {
+
+        await db.query(
+            "CALL sp_agregar_puesto(?)",
+            [numero_puesto.trim()]
+        );
+
+        res.json({
+            mensaje: "Puesto agregado correctamente"
+        });
+
+    } catch (error) {
+
+        res.status(500).json({
+            error: error.message
+        });
+
+    }
+};

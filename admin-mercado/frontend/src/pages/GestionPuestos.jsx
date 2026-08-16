@@ -9,6 +9,8 @@ export default function GestionPuestos() {
   const [mostrarModal, setMostrarModal] = useState(false);
   const [locatarios, setLocatarios] = useState([]);
   const [filtro, setFiltro] = useState("todos");
+  const [mostrarModalAgregar, setMostrarModalAgregar] = useState(false);
+  const [nuevoPuesto, setNuevoPuesto] = useState("");
 
   const puestosFiltrados = puestosData.filter((p) => {
 
@@ -146,6 +148,50 @@ export default function GestionPuestos() {
 
   }
 
+  async function agregarPuesto() {
+
+    if (!nuevoPuesto.trim()) {
+      alert("Escribe el número del puesto.");
+      return;
+    }
+
+    try {
+
+      const respuesta = await fetch(
+        API_URL + "/api/puestos/agregar",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify({
+            numero_puesto: nuevoPuesto.trim()
+          })
+        }
+      );
+
+      const datos = await respuesta.json();
+
+      if (!respuesta.ok) {
+        alert(datos.error || "No se pudo agregar el puesto.");
+        return;
+      }
+
+      alert(datos.mensaje);
+
+      setNuevoPuesto("");
+      setMostrarModalAgregar(false);
+
+      await obtenerPuestos();
+
+    } catch (error) {
+
+      console.log(error);
+      alert("No se pudo conectar con el servidor.");
+
+    }
+  }
+
   return (
     <div className="content">
       <div className="page-head">
@@ -164,18 +210,28 @@ export default function GestionPuestos() {
             >
               <span className="ldot" />Todos
             </span>
+
             <span
               className={`leyenda-pill lp-disponible ${filtro === "disponible" ? "activo" : ""}`}
               onClick={() => setFiltro("disponible")}
             >
               <span className="ldot" />Disponibles
             </span>
+
             <span
               className={`leyenda-pill lp-asignado ${filtro === "asignado" ? "activo" : ""}`}
               onClick={() => setFiltro("asignado")}
             >
               <span className="ldot" />Ocupados
             </span>
+
+            <button
+              className="btn-agregar-puesto"
+              onClick={() => setMostrarModalAgregar(true)}
+            >
+              <i className="fa-solid fa-plus" />
+              Agregar puesto
+            </button>
 
           </div>
 
@@ -295,6 +351,45 @@ export default function GestionPuestos() {
           </div>
         </div>
       </div>
+      {mostrarModalAgregar && (
+
+        <div className="modal-fondo">
+
+          <div className="modal-asignar">
+
+            <h2>Agregar puesto</h2>
+
+            <p>Ingresa el número del nuevo puesto.</p>
+
+            <input
+              type="text"
+              placeholder="Ej. B-03"
+              value={nuevoPuesto}
+              onChange={(e) => setNuevoPuesto(e.target.value)}
+            />
+
+            <button
+              onClick={agregarPuesto}
+            >
+              Agregar
+            </button>
+
+            <button
+              className="cerrar-modal"
+              onClick={() => {
+                setMostrarModalAgregar(false);
+                setNuevoPuesto("");
+              }}
+            >
+              Cancelar
+            </button>
+
+          </div>
+
+        </div>
+
+      )}
+
       {
         mostrarModal && (
 

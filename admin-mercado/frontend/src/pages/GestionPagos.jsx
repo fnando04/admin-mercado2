@@ -393,8 +393,24 @@ export default function GestionPagos() {
                       </button>
                     )}
                     {(p.estado_pago === "pendiente" || p.estado_pago === "vencido") && (
-                      <button className="btnIconoFila" title="Enviar recordatorio" onClick={() => abrirNotificar(p)}>
-                        <i className="fa-brands fa-whatsapp"></i>
+                      <button
+                        className={`btnIconoFila ${
+                          p.estado_pago === "vencido" ? "btnVencido" : "btnPendiente"
+                        }`}
+                        title={
+                          p.estado_pago === "vencido"
+                            ? "Enviar recordatorio de pago vencido"
+                            : "Enviar recordatorio de pago próximo"
+                        }
+                        onClick={() => abrirNotificar(p)}
+                      >
+                        <i
+                          className={
+                            p.estado_pago === "vencido"
+                              ? "fas fa-triangle-exclamation"
+                              : "fas fa-bell"
+                          }
+                        ></i>
                       </button>
                     )}
                     <button className="btnIconoFila" onClick={() => verDetalle(p)}>
@@ -446,7 +462,7 @@ export default function GestionPagos() {
           <div className="modal-detalle">
             <div className="modal-contenido">
               <h2>Enviar recordatorio</h2>
-              <p>¿Quieres enviarle un recordatorio de WhatsApp a <b>{filaNotificar.nombre}</b> sobre su pago {filaNotificar.estado_pago === "vencido" ? "vencido" : "pendiente"}?</p>
+              <p>¿Quieres enviarle un recordatorio a <b>{filaNotificar.nombre}</b> sobre su pago {filaNotificar.estado_pago === "vencido" ? "vencido" : "pendiente"}?</p>
               <div style={{ marginTop: "10px" }}>
                 <button onClick={confirmarNotificar} disabled={enviandoNotificacion}>
                   {enviandoNotificacion ? "Enviando..." : "Sí, enviar"}

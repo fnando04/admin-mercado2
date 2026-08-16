@@ -61,8 +61,8 @@ app.use("/api/locatario", locatarioRoutes);
 const dashboardRoutes = require("./routes/dashboard");
 app.use("/api/dashboard", dashboardRoutes);
 
-const whatsappRoutes = require("./routes/whatsapp"); 
-app.use("/api/pagos", whatsappRoutes);
+const smsRoutes = require("./routes/sms"); 
+app.use("/api/pagos", smsRoutes);
 
 //--------------------
 

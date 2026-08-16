@@ -7,18 +7,21 @@ const NOMBRES_MES = [
   "julio", "agosto", "septiembre", "octubre", "noviembre", "diciembre"
 ];
 
-// Arma el número en formato E.164 requerido por Twilio (ej. +5217712345678)
 // Ajustar el "52" si el país es distinto a México
 function formatearTelefono(telefono) {
-  const soloDigitos = telefono.replace(/\D/g, "");
-  if (soloDigitos.startsWith("521")) return `+${soloDigitos}`;
-  if (soloDigitos.startsWith("52")) return `+521${soloDigitos.slice(2)}`;
-  return `+521${soloDigitos}`;
+  const limpio = telefono.trim();
+  if (limpio.startsWith("+")) {
+    return limpio.replace(/[^\d+]/g, "");
+  }
+  const soloDigitos = limpio.replace(/\D/g, "");
+  if (soloDigitos.startsWith("52")) {
+    return `+${soloDigitos}`;
+  }
+  return `+52${soloDigitos}`;
 }
 
-
 // POST /api/pagos/enviar-recordatorio/:id_pago
-// Envía WhatsApp a UN solo locatario, sin importar si ya se le mandó antes
+// Envía SMS a UN solo locatario, sin importar si ya se le mandó antes
 exports.enviarRecordatorioIndividual = async (req, res) => {
   try {
     const { id_pago } = req.params;
@@ -36,30 +39,34 @@ exports.enviarRecordatorioIndividual = async (req, res) => {
     }
 
     const esVencido = pago.estado_pago === "vencido";
-    const variables = JSON.stringify({
-      1: pago.nombre,
-      2: pago.numero_puesto || "",
-      3: `${NOMBRES_MES[pago.mes_pagado]} ${pago.anio_pagado}`,
-      4: `$${Number(pago.monto).toFixed(2)}`,
-      5: pago.fecha_limite
-    });
 
-    // TEMPORAL: comprobar que Twilio está recibiendo la plantilla
-    console.log(
-      "CONTENT SID:",
-      process.env.TWILIO_TEMPLATE_PAGO_POR_VENCER
-    );
-
-    console.log(
-      "VARIABLES:",
-      variables
-    );
+    let mensajeTexto;
+    if (esVencido) {
+      mensajeTexto =
+      `-\nPAGO VENCIDO\n` +
+        `Hola ${pago.nombre}\n` +
+        `Puesto: ${pago.numero_puesto || ""}\n` +
+        `Periodo: ${NOMBRES_MES[pago.mes_pagado]} ${pago.anio_pagado}\n` +
+        `Monto: $${Number(pago.monto).toFixed(2)}\n` +
+        `Vence: ${pago.fecha_limite}\n` +
+        `Favor de realizar su pago.\n` +
+        `--Mercado Municipal`;
+    } else {
+      mensajeTexto =
+        `-\nRECORDATORIO DE PAGO\n` +
+        `Hola ${pago.nombre}\n` +
+        `Puesto: ${pago.numero_puesto || ""}\n` +
+        `Periodo: ${NOMBRES_MES[pago.mes_pagado]} ${pago.anio_pagado}\n` +
+        `Monto: $${Number(pago.monto).toFixed(2)}\n` +
+        `Vence: ${pago.fecha_limite}\n` +
+        `Favor de pagar a tiempo.\n` +
+        `--Mercado Municipal`;
+    }
 
     const mensaje = await client.messages.create({
-      from: `whatsapp:${process.env.TWILIO_WHATSAPP_FROM}`,
-      to: `whatsapp:${formatearTelefono(pago.telefono)}`,
-      contentSid: process.env.TWILIO_TEMPLATE_PAGO_POR_VENCER,
-      contentVariables: variables
+      from: process.env.TWILIO_PHONE_NUMBER,
+      to: formatearTelefono(pago.telefono),
+      body: mensajeTexto
     });
 
     await db.query("CALL sp_marcar_recordatorio_enviado(?)", [id_pago]);
