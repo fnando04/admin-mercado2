@@ -20,15 +20,8 @@ function formatearTelefono(telefono) {
   return `+52${soloDigitos}`;
 }
 
-// Asegura que el número tenga el prefijo "whatsapp:" requerido por la API de WhatsApp de Twilio,
-// sin duplicarlo si ya viene incluido en la variable de entorno.
-function formatearWhatsapp(numero) {
-  const limpio = numero.trim();
-  return limpio.startsWith("whatsapp:") ? limpio : `whatsapp:${limpio}`;
-}
-
 // POST /api/pagos/enviar-recordatorio/:id_pago
-// Envía WhatsApp a UN solo locatario, sin importar si ya se le mandó antes
+// Envía SMS a UN solo locatario, sin importar si ya se le mandó antes
 exports.enviarRecordatorioIndividual = async (req, res) => {
   try {
     const { id_pago } = req.params;
@@ -44,16 +37,13 @@ exports.enviarRecordatorioIndividual = async (req, res) => {
     if (!pago.telefono) {
       return res.status(400).json({ error: "El locatario no tiene teléfono registrado" });
     }
-    if (!process.env.TWILIO_WHATSAPP_FROM) {
-      return res.status(500).json({ error: "Falta configurar TWILIO_WHATSAPP_FROM en las variables de entorno" });
-    }
 
     const esVencido = pago.estado_pago === "vencido";
 
     let mensajeTexto;
     if (esVencido) {
       mensajeTexto =
-        `-\nPAGO VENCIDO\n` +
+      `-\nPAGO VENCIDO\n` +
         `Hola ${pago.nombre}\n` +
         `Puesto: ${pago.numero_puesto || ""}\n` +
         `Periodo: ${NOMBRES_MES[pago.mes_pagado]} ${pago.anio_pagado}\n` +
@@ -74,8 +64,8 @@ exports.enviarRecordatorioIndividual = async (req, res) => {
     }
 
     const mensaje = await client.messages.create({
-      from: formatearWhatsapp(process.env.TWILIO_WHATSAPP_FROM),
-      to: formatearWhatsapp(formatearTelefono(pago.telefono)),
+      from: process.env.TWILIO_PHONE_NUMBER,
+      to: formatearTelefono(pago.telefono),
       body: mensajeTexto
     });
 
